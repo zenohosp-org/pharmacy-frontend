@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { getDrugs, getBatches, createCounterSale } from '../api/pharmacyClient';
+import { Link } from 'react-router-dom';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
@@ -19,6 +20,7 @@ export default function CounterSale() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
+  const [completedSales, setCompletedSales] = useState([]);
 
   useEffect(() => {
     fetchDrugs();
@@ -158,7 +160,20 @@ export default function CounterSale() {
         });
       }
 
-      setSuccess(`Billing successful! Bill number will be printed.`);
+      const { subtotal, totalGst, total } = calculateCartTotals();
+      const saleRecord = {
+        id: Date.now(),
+        billNumber: `BILL-${new Date().getTime()}`,
+        timestamp: new Date().toLocaleString(),
+        patientPhone: patientPhone || 'N/A',
+        items: [...cart],
+        subtotal,
+        totalGst,
+        total
+      };
+
+      setCompletedSales([saleRecord, ...completedSales]);
+      setSuccess(`Billing successful! Bill number: ${saleRecord.billNumber}`);
       setCart([]);
       setPatientPhone('');
       setTimeout(() => setSuccess(null), 5000);
@@ -173,373 +188,364 @@ export default function CounterSale() {
   const { subtotal, totalGst, total } = calculateCartTotals();
 
   return (
-    <div style={{ padding: '24px' }}>
-      <div style={{ marginBottom: '24px' }}>
-        <h1>Counter Sale</h1>
-        <p>Dispense drugs and generate GST invoices</p>
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg-page)' }}>
+      {/* Header */}
+      <div style={{
+        padding: 'var(--spacing-8)',
+        backgroundColor: 'var(--color-white)',
+        borderBottom: '1px solid var(--color-gray-200)',
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center'
+      }}>
+        <div>
+          <h1 style={{ marginBottom: 'var(--spacing-2)' }}>Counter Sale</h1>
+          <p style={{ margin: 0, color: 'var(--color-gray-600)' }}>
+            Dispense drugs and generate GST invoices
+          </p>
+        </div>
+        <Link to="/pharmacy/sales-ledger" className="btn btn-secondary">
+          View Sales Ledger
+        </Link>
       </div>
 
-      {error && (
-        <div style={{
-          padding: '12px',
-          color: 'white',
-          backgroundColor: '#d32f2f',
-          marginBottom: '16px',
-          borderRadius: '4px'
-        }}>
-          {error}
-        </div>
-      )}
+      {/* Main Content */}
+      <div style={{ padding: 'var(--spacing-8)' }}>
+        {error && (
+          <div className="alert alert-error" style={{ marginBottom: 'var(--spacing-5)' }}>
+            {error}
+          </div>
+        )}
 
-      {success && (
-        <div style={{
-          padding: '12px',
-          color: 'white',
-          backgroundColor: '#388e3c',
-          marginBottom: '16px',
-          borderRadius: '4px'
-        }}>
-          {success}
-        </div>
-      )}
+        {success && (
+          <div className="alert alert-success" style={{ marginBottom: 'var(--spacing-5)' }}>
+            {success}
+          </div>
+        )}
 
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '24px' }}>
-        {/* LEFT: Drug Selection & Cart */}
-        <div>
-          {/* Drug Search */}
-          <div style={{
-            padding: '24px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            marginBottom: '24px'
-          }}>
-            <h3>Select Drug</h3>
-
-            <div style={{ marginBottom: '16px', position: 'relative' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Drug Search *</label>
-              <input
-                type="text"
-                placeholder="Search by brand or generic name..."
-                value={drugSearch}
-                onChange={(e) => setDrugSearch(e.target.value)}
-                onFocus={() => drugSearch && setShowDrugDropdown(true)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  boxSizing: 'border-box'
-                }}
-              />
-              {showDrugDropdown && filteredDrugs.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid #ccc',
-                  borderTop: 'none',
-                  maxHeight: '200px',
-                  overflowY: 'auto',
-                  zIndex: 10
-                }}>
-                  {filteredDrugs.map(drug => (
-                    <div
-                      key={drug.id}
-                      onClick={() => handleDrugSelect(drug)}
-                      style={{
-                        padding: '8px 12px',
-                        cursor: 'pointer',
-                        backgroundColor: selectedDrug?.id === drug.id ? '#e3f2fd' : 'white',
-                        borderBottom: '1px solid #eee'
-                      }}
-                    >
-                      <strong>{drug.brandName}</strong> ({drug.genericName})
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Batch Selection */}
-            {selectedDrug && batches.length > 0 && (
-              <div style={{ marginBottom: '16px' }}>
-                <label style={{ display: 'block', marginBottom: '8px', fontWeight: 'bold' }}>Select Batch *</label>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  {batches.map(batch => (
-                    <div
-                      key={batch.id}
-                      onClick={() => handleBatchSelect(batch)}
-                      style={{
-                        padding: '12px',
-                        border: selectedBatch?.id === batch.id ? '2px solid #4CAF50' : '1px solid #ccc',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        backgroundColor: selectedBatch?.id === batch.id ? '#f0f7f0' : 'white'
-                      }}
-                    >
-                      <div style={{ fontWeight: 'bold' }}>
-                        Batch: {batch.batchNumber}
-                      </div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>
-                        Expiry: {new Date(batch.expiryDate).toLocaleDateString()}
-                      </div>
-                    </div>
-                  ))}
-                </div>
+        <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: 'var(--spacing-6)' }}>
+          {/* LEFT: Drug Selection & Cart */}
+          <div>
+            {/* Drug Search Card */}
+            <div className="card card-elevated" style={{ marginBottom: 'var(--spacing-6)' }}>
+              <div className="card-header">
+                <h3 style={{ margin: 0 }}>Select Drug</h3>
               </div>
-            )}
-
-            {/* Qty & Rate */}
-            {selectedDrug && selectedBatch && (
-              <div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Qty *</label>
-                    <input
-                      type="number"
-                      placeholder="Quantity"
-                      value={qty}
-                      onChange={(e) => setQty(e.target.value)}
-                      step="0.01"
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Rate *</label>
-                    <input
-                      type="number"
-                      placeholder="Rate per unit"
-                      value={rate}
-                      onChange={(e) => setRate(e.target.value)}
-                      step="0.01"
-                      style={{
-                        width: '100%',
-                        padding: '8px',
-                        border: '1px solid #ccc',
-                        borderRadius: '4px',
-                        boxSizing: 'border-box'
-                      }}
-                    />
-                  </div>
-                </div>
-
-                <div style={{ marginBottom: '16px' }}>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>GST Rate %</label>
+              <div className="card-body">
+                {/* Drug Search Input */}
+                <div className="form-group" style={{ position: 'relative', marginBottom: 'var(--spacing-5)' }}>
+                  <label className="form-label required">Drug Search</label>
                   <input
-                    type="number"
-                    placeholder="GST %"
-                    value={gstRate}
-                    onChange={(e) => setGstRate(e.target.value)}
-                    step="0.01"
-                    style={{
-                      width: '100%',
-                      padding: '8px',
-                      border: '1px solid #ccc',
-                      borderRadius: '4px',
-                      boxSizing: 'border-box'
-                    }}
+                    type="text"
+                    placeholder="Search by brand or generic name..."
+                    value={drugSearch}
+                    onChange={(e) => setDrugSearch(e.target.value)}
+                    onFocus={() => drugSearch && setShowDrugDropdown(true)}
+                    className="form-input"
                   />
+                  {showDrugDropdown && filteredDrugs.length > 0 && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '100%',
+                      left: 0,
+                      right: 0,
+                      backgroundColor: 'var(--color-white)',
+                      border: '1px solid var(--color-gray-200)',
+                      borderTop: 'none',
+                      maxHeight: '200px',
+                      overflowY: 'auto',
+                      zIndex: 100,
+                      marginTop: '-4px',
+                      borderRadius: '0 0 var(--radius-lg) var(--radius-lg)',
+                      boxShadow: 'var(--shadow-md)'
+                    }}>
+                      {filteredDrugs.map(drug => (
+                        <div
+                          key={drug.id}
+                          onClick={() => handleDrugSelect(drug)}
+                          style={{
+                            padding: 'var(--spacing-3)',
+                            cursor: 'pointer',
+                            backgroundColor: selectedDrug?.id === drug.id ? 'var(--color-primary-subtle)' : 'var(--color-white)',
+                            borderBottom: '1px solid var(--color-gray-100)',
+                            transition: 'background-color var(--transition-fast)'
+                          }}
+                        >
+                          <strong>{drug.brandName}</strong>
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', marginTop: '2px' }}>
+                            {drug.genericName}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                {/* Rate Preview */}
-                {qty && rate && (
-                  <div style={{
-                    padding: '12px',
-                    backgroundColor: '#f5f5f5',
-                    borderRadius: '4px',
-                    marginBottom: '16px'
-                  }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span>Subtotal:</span>
-                      <strong>₹{(parseFloat(qty) * parseFloat(rate)).toFixed(2)}</strong>
-                    </div>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
-                      <span>GST ({gstRate}%):</span>
-                      <strong>₹{((parseFloat(qty) * parseFloat(rate) * parseFloat(gstRate)) / 100).toFixed(2)}</strong>
-                    </div>
-                    <div style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      fontSize: '16px',
-                      fontWeight: 'bold',
-                      borderTop: '1px solid #ddd',
-                      paddingTop: '8px'
-                    }}>
-                      <span>Total:</span>
-                      <span>₹{(parseFloat(qty) * parseFloat(rate) * (1 + parseFloat(gstRate) / 100)).toFixed(2)}</span>
+                {/* Batch Selection */}
+                {selectedDrug && batches.length > 0 && (
+                  <div className="form-group" style={{ marginBottom: 'var(--spacing-5)' }}>
+                    <label className="form-label required">Select Batch</label>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-2)' }}>
+                      {batches.map(batch => (
+                        <div
+                          key={batch.id}
+                          onClick={() => handleBatchSelect(batch)}
+                          style={{
+                            padding: 'var(--spacing-3)',
+                            border: selectedBatch?.id === batch.id ? '2px solid var(--color-success)' : '1px solid var(--color-gray-200)',
+                            borderRadius: 'var(--radius-lg)',
+                            cursor: 'pointer',
+                            backgroundColor: selectedBatch?.id === batch.id ? 'var(--color-success-subtle)' : 'var(--color-white)',
+                            transition: 'all var(--transition-fast)'
+                          }}
+                        >
+                          <div style={{ fontWeight: 'var(--fw-semibold)', marginBottom: 'var(--spacing-1)' }}>
+                            Batch: {batch.batchNumber}
+                          </div>
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
+                            Expiry: {new Date(batch.expiryDate).toLocaleDateString()}
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
                 )}
 
-                <button
-                  onClick={handleAddToCart}
-                  style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: '#2196F3',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '4px',
-                    cursor: 'pointer',
-                    fontWeight: 'bold'
-                  }}
-                >
-                  Add to Cart
-                </button>
+                {/* Qty & Rate */}
+                {selectedDrug && selectedBatch && (
+                  <div>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-5)' }}>
+                      <div className="form-group">
+                        <label className="form-label required">Quantity</label>
+                        <input
+                          type="number"
+                          placeholder="0.00"
+                          value={qty}
+                          onChange={(e) => setQty(e.target.value)}
+                          step="0.01"
+                          className="form-input"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label required">Rate</label>
+                        <input
+                          type="number"
+                          placeholder="0.00"
+                          value={rate}
+                          onChange={(e) => setRate(e.target.value)}
+                          step="0.01"
+                          className="form-input"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="form-group" style={{ marginBottom: 'var(--spacing-5)' }}>
+                      <label className="form-label">GST Rate %</label>
+                      <input
+                        type="number"
+                        placeholder="0.00"
+                        value={gstRate}
+                        onChange={(e) => setGstRate(e.target.value)}
+                        step="0.01"
+                        className="form-input"
+                      />
+                    </div>
+
+                    {/* Rate Preview */}
+                    {qty && rate && (
+                      <div style={{
+                        padding: 'var(--spacing-4)',
+                        backgroundColor: 'var(--color-gray-50)',
+                        borderRadius: 'var(--radius-lg)',
+                        marginBottom: 'var(--spacing-5)',
+                        border: '1px solid var(--color-gray-200)'
+                      }}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                          <span style={{ color: 'var(--color-gray-600)' }}>Subtotal:</span>
+                          <strong>₹{(parseFloat(qty) * parseFloat(rate)).toFixed(2)}</strong>
+                        </div>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                          <span style={{ color: 'var(--color-gray-600)' }}>GST ({gstRate}%):</span>
+                          <strong>₹{((parseFloat(qty) * parseFloat(rate) * parseFloat(gstRate)) / 100).toFixed(2)}</strong>
+                        </div>
+                        <div style={{
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          fontSize: 'var(--fs-lg)',
+                          fontWeight: 'var(--fw-bold)',
+                          borderTop: '1px solid var(--color-gray-200)',
+                          paddingTop: 'var(--spacing-2)'
+                        }}>
+                          <span>Total:</span>
+                          <span>₹{(parseFloat(qty) * parseFloat(rate) * (1 + parseFloat(gstRate) / 100)).toFixed(2)}</span>
+                        </div>
+                      </div>
+                    )}
+
+                    <button
+                      onClick={handleAddToCart}
+                      className="btn btn-primary btn-block"
+                    >
+                      Add to Cart
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Cart Items */}
+            {cart.length > 0 && (
+              <div className="card card-elevated">
+                <div className="card-header">
+                  <h3 style={{ margin: 0 }}>Cart ({cart.length} items)</h3>
+                </div>
+                <div className="card-body" style={{ display: 'flex', flexDirection: 'column', gap: 'var(--spacing-3)' }}>
+                  {cart.map(item => (
+                    <div
+                      key={item.id}
+                      style={{
+                        padding: 'var(--spacing-3)',
+                        backgroundColor: 'var(--color-gray-50)',
+                        borderRadius: 'var(--radius-lg)',
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        border: '1px solid var(--color-gray-200)'
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 'var(--fw-semibold)', marginBottom: 'var(--spacing-1)' }}>
+                          {item.drugName}
+                        </div>
+                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
+                          {item.qty} × ₹{item.rate.toFixed(2)} = ₹{item.total.toFixed(2)}
+                        </div>
+                      </div>
+                      <button
+                        onClick={() => handleRemoveFromCart(item.id)}
+                        className="btn btn-danger btn-sm"
+                      >
+                        Remove
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
 
-          {/* Cart Items */}
-          {cart.length > 0 && (
-            <div style={{
-              padding: '24px',
-              border: '1px solid #ddd',
-              borderRadius: '8px'
+          {/* RIGHT: Billing Summary */}
+          <div>
+            <div className="card card-elevated" style={{
+              position: 'sticky',
+              top: 'var(--spacing-8)'
             }}>
-              <h3>Cart ({cart.length} items)</h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {cart.map(item => (
-                  <div
-                    key={item.id}
-                    style={{
-                      padding: '12px',
-                      backgroundColor: '#f9f9f9',
-                      borderRadius: '4px',
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center'
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 'bold' }}>{item.drugName}</div>
-                      <div style={{ fontSize: '12px', color: '#666' }}>
-                        {item.qty} × ₹{item.rate.toFixed(2)} = ₹{item.total.toFixed(2)}
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => handleRemoveFromCart(item.id)}
-                      style={{
-                        padding: '6px 12px',
-                        backgroundColor: '#f44336',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px',
-                        cursor: 'pointer',
-                        fontSize: '12px'
-                      }}
-                    >
-                      Remove
-                    </button>
+              <div className="card-header">
+                <h3 style={{ margin: 0 }}>Bill Summary</h3>
+              </div>
+
+              <div className="card-body">
+                <div style={{
+                  padding: 'var(--spacing-4)',
+                  backgroundColor: 'var(--color-gray-50)',
+                  borderRadius: 'var(--radius-lg)',
+                  marginBottom: 'var(--spacing-5)',
+                  border: '1px solid var(--color-gray-200)'
+                }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                    <span style={{ color: 'var(--color-gray-600)' }}>Subtotal:</span>
+                    <strong>₹{subtotal.toFixed(2)}</strong>
                   </div>
-                ))}
+                  <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 'var(--spacing-2)' }}>
+                    <span style={{ color: 'var(--color-gray-600)' }}>GST:</span>
+                    <strong>₹{totalGst.toFixed(2)}</strong>
+                  </div>
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    fontSize: 'var(--fs-lg)',
+                    fontWeight: 'var(--fw-bold)',
+                    borderTop: '1px solid var(--color-gray-200)',
+                    paddingTop: 'var(--spacing-2)'
+                  }}>
+                    <span>Total:</span>
+                    <span style={{ color: 'var(--color-success)' }}>₹{total.toFixed(2)}</span>
+                  </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">Patient Phone (Optional)</label>
+                  <input
+                    type="tel"
+                    placeholder="Mobile number"
+                    value={patientPhone}
+                    onChange={(e) => setPatientPhone(e.target.value)}
+                    className="form-input"
+                  />
+                </div>
+
+                <button
+                  onClick={handleCheckout}
+                  disabled={loading || cart.length === 0}
+                  className="btn btn-success btn-block"
+                  style={{ marginBottom: 'var(--spacing-3)' }}
+                >
+                  {loading ? 'Processing...' : '✓ Complete Sale'}
+                </button>
+
+                <button
+                  onClick={() => {
+                    setCart([]);
+                    setPatientPhone('');
+                    setError(null);
+                  }}
+                  className="btn btn-secondary btn-block"
+                >
+                  Clear Cart
+                </button>
               </div>
             </div>
-          )}
-        </div>
-
-        {/* RIGHT: Totals & Checkout */}
-        <div>
-          <div style={{
-            padding: '24px',
-            border: '1px solid #ddd',
-            borderRadius: '8px',
-            position: 'sticky',
-            top: '24px'
-          }}>
-            <h3>Bill Summary</h3>
-
-            <div style={{
-              padding: '16px',
-              backgroundColor: '#f5f5f5',
-              borderRadius: '4px',
-              marginBottom: '16px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>Subtotal:</span>
-                <strong>₹{subtotal.toFixed(2)}</strong>
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
-                <span>GST:</span>
-                <strong>₹{totalGst.toFixed(2)}</strong>
-              </div>
-              <div style={{
-                display: 'flex',
-                justifyContent: 'space-between',
-                fontSize: '18px',
-                fontWeight: 'bold',
-                borderTop: '1px solid #ddd',
-                paddingTop: '8px'
-              }}>
-                <span>Total:</span>
-                <span>₹{total.toFixed(2)}</span>
-              </div>
-            </div>
-
-            <div style={{ marginBottom: '16px' }}>
-              <label style={{ display: 'block', marginBottom: '4px', fontWeight: 'bold' }}>Patient Phone (optional)</label>
-              <input
-                type="tel"
-                placeholder="Mobile number"
-                value={patientPhone}
-                onChange={(e) => setPatientPhone(e.target.value)}
-                style={{
-                  width: '100%',
-                  padding: '8px',
-                  border: '1px solid #ccc',
-                  borderRadius: '4px',
-                  boxSizing: 'border-box'
-                }}
-              />
-            </div>
-
-            <button
-              onClick={handleCheckout}
-              disabled={loading || cart.length === 0}
-              style={{
-                width: '100%',
-                padding: '12px',
-                backgroundColor: cart.length === 0 ? '#ccc' : '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: cart.length === 0 ? 'not-allowed' : 'pointer',
-                fontWeight: 'bold',
-                fontSize: '16px'
-              }}
-            >
-              {loading ? 'Processing...' : 'Complete Sale & Print Invoice'}
-            </button>
-
-            <button
-              onClick={() => {
-                setCart([]);
-                setPatientPhone('');
-                setError(null);
-              }}
-              style={{
-                width: '100%',
-                padding: '10px',
-                marginTop: '8px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer'
-              }}
-            >
-              Clear Cart
-            </button>
           </div>
         </div>
+
+        {/* Recent Transactions */}
+        {completedSales.length > 0 && (
+          <div style={{ marginTop: 'var(--spacing-8)' }}>
+            <div className="card card-elevated">
+              <div className="card-header">
+                <h3 style={{ margin: 0 }}>Recently Completed Sales ({completedSales.length})</h3>
+              </div>
+              <table className="table">
+                <thead>
+                  <tr>
+                    <th>Bill Number</th>
+                    <th>Time</th>
+                    <th style={{ textAlign: 'right' }}>Amount</th>
+                    <th style={{ textAlign: 'center' }}>Items</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {completedSales.slice(0, 10).map(sale => (
+                    <tr key={sale.id}>
+                      <td><strong>{sale.billNumber}</strong></td>
+                      <td style={{ fontSize: 'var(--fs-sm)', color: 'var(--color-gray-600)' }}>
+                        {sale.timestamp}
+                      </td>
+                      <td style={{ textAlign: 'right', fontWeight: 'var(--fw-bold)' }}>
+                        ₹{sale.total.toFixed(2)}
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <span className="badge badge-primary">
+                          {sale.items.length}
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

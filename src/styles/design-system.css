@@ -108,8 +108,14 @@
   --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* ── Z-index ── */
+  --z-sidebar: 100;
+  --z-header: 110;
   --z-modal-backdrop: 200;
   --z-modal: 300;
+
+  /* ── Sidebar ── */
+  --color-sidebar-bg: #ffffff;
+  --color-sidebar-border: #e5e7eb;
 }
 
 button,

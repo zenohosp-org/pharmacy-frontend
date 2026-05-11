@@ -113,3 +113,15 @@ export const createCounterSale = async (payload) => {
   if (!response.ok) throw new Error('Failed to create counter sale');
   return response.json();
 };
+
+export const getCounterSales = async (storeId) => {
+  try {
+    const response = await fetch(`${API_BASE}/dispensing/counter-sales?storeId=${storeId}`);
+    if (response.ok) {
+      return response.json();
+    }
+  } catch (e) {
+    console.warn('Counter sales API not available');
+  }
+  return [];
+};
