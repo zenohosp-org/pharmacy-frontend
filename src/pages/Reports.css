@@ -1,0 +1,25 @@
+/* Reports Page Styles */
+
+.reports-container {
+  padding: var(--spacing-8);
+  background-color: var(--color-bg-page);
+}
+
+.page-title {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-2);
+}
+
+.page-subtitle {
+  font-size: var(--fs-base);
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-6);
+}
+
+@media (max-width: 768px) {
+  .reports-container {
+    padding: var(--spacing-4);
+  }
+}
