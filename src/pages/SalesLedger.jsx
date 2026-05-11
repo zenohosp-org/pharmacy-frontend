@@ -1,6 +1,21 @@
 import { useState, useEffect } from 'react';
 import { getCounterSales, getDrugs } from '../api/pharmacyClient';
 import { Link } from 'react-router-dom';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  IconButton,
+  Collapse,
+  Box,
+  Typography
+} from '@mui/material';
+import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
@@ -8,7 +23,6 @@ export default function SalesLedger() {
   const [sales, setSales] = useState([]);
   const [drugs, setDrugs] = useState({});
   const [loading, setLoading] = useState(true);
-  const [expandedSaleId, setExpandedSaleId] = useState(null);
 
   useEffect(() => {
     fetchData();
@@ -35,6 +49,93 @@ export default function SalesLedger() {
   };
 
   const getDrugName = (drugId) => drugs[drugId] || `Drug ${drugId?.slice(0, 8)}`;
+
+  const SalesRow = ({ sale }) => {
+    const [open, setOpen] = useState(false);
+    const subtotal = parseFloat(sale.qty || 0) * parseFloat(sale.rate || 0);
+    const gstAmount = subtotal * (parseFloat(sale.gstRate || 0) / 100);
+    const total = subtotal + gstAmount;
+
+    return (
+      <>
+        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
+          <TableCell>
+            <IconButton
+              aria-label="expand row"
+              size="small"
+              onClick={() => setOpen(!open)}
+            >
+              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
+            </IconButton>
+          </TableCell>
+          <TableCell component="th" scope="row" sx={{ fontWeight: 600 }}>
+            {getDrugName(sale.drugId)}
+          </TableCell>
+          <TableCell align="right">{parseFloat(sale.qty || 0).toFixed(2)}</TableCell>
+          <TableCell align="right">₹{parseFloat(sale.rate || 0).toFixed(2)}</TableCell>
+          <TableCell align="right">₹{subtotal.toFixed(2)}</TableCell>
+          <TableCell align="right" sx={{ color: 'var(--color-warning-dark)' }}>
+            ₹{gstAmount.toFixed(2)}
+          </TableCell>
+          <TableCell align="right" sx={{ fontWeight: 600, color: 'var(--color-success-dark)', fontSize: '1.1em' }}>
+            ₹{total.toFixed(2)}
+          </TableCell>
+          <TableCell sx={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
+            {new Date(sale.dispensedAt).toLocaleTimeString()}
+          </TableCell>
+        </TableRow>
+        <TableRow>
+          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={8}>
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <Box sx={{ margin: 2, backgroundColor: 'var(--color-gray-50)', borderRadius: '8px', padding: 2 }}>
+                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, marginBottom: 2 }}>
+                  Transaction Details
+                </Typography>
+                <Box sx={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 2 }}>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'var(--color-gray-500)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      GST Rate
+                    </Typography>
+                    <Typography sx={{ marginTop: 0.5 }}>{parseFloat(sale.gstRate || 0).toFixed(0)}%</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'var(--color-gray-500)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Discount
+                    </Typography>
+                    <Typography sx={{ marginTop: 0.5 }}>₹{(sale.discount || 0).toFixed(2)}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'var(--color-gray-500)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Bill Type
+                    </Typography>
+                    <Typography sx={{ marginTop: 0.5 }}>{sale.billType || 'CASH'}</Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'var(--color-gray-500)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Batch ID
+                    </Typography>
+                    <Typography sx={{ marginTop: 0.5, fontSize: 'var(--fs-xs)' }}>
+                      <code style={{ backgroundColor: 'white', padding: '2px 6px', borderRadius: '4px' }}>
+                        {sale.batchId?.slice(0, 8)}...
+                      </code>
+                    </Typography>
+                  </Box>
+                  <Box>
+                    <Typography variant="caption" sx={{ color: 'var(--color-gray-500)', fontWeight: 600, textTransform: 'uppercase' }}>
+                      Dispensed At
+                    </Typography>
+                    <Typography sx={{ marginTop: 0.5 }}>
+                      {new Date(sale.dispensedAt).toLocaleString()}
+                    </Typography>
+                  </Box>
+                </Box>
+              </Box>
+            </Collapse>
+          </TableCell>
+        </TableRow>
+      </>
+    );
+  };
 
   const totalRevenue = sales.reduce((sum, s) => {
     const subtotal = parseFloat(s.qty || 0) * parseFloat(s.rate || 0);
@@ -275,87 +376,44 @@ export default function SalesLedger() {
 
         {/* Recent Transactions */}
         {sales.length === 0 ? (
-          <div className="card card-elevated">
-            <div style={{
-              padding: 'var(--spacing-16) var(--spacing-8)',
-              textAlign: 'center'
-            }}>
-              <p style={{
-                fontSize: 'var(--fs-lg)',
-                color: 'var(--color-gray-500)',
-                marginBottom: 'var(--spacing-4)'
-              }}>
-                No sales recorded yet
-              </p>
-              <p style={{ color: 'var(--color-gray-400)', marginBottom: 'var(--spacing-6)' }}>
-                Create your first counter sale to see transactions here
-              </p>
-              <Link to="/pharmacy/counter-sale" className="btn btn-primary">
-                Start a Sale
-              </Link>
-            </div>
-          </div>
+          <Paper elevation={2} style={{ padding: 'var(--spacing-16) var(--spacing-8)', textAlign: 'center' }}>
+            <Typography variant="h6" sx={{ color: 'var(--color-gray-500)', marginBottom: 'var(--spacing-4)' }}>
+              No sales recorded yet
+            </Typography>
+            <Typography variant="body2" sx={{ color: 'var(--color-gray-400)', marginBottom: 'var(--spacing-6)' }}>
+              Create your first counter sale to see transactions here
+            </Typography>
+            <Link to="/pharmacy/counter-sale" className="btn btn-primary">
+              Start a Sale
+            </Link>
+          </Paper>
         ) : (
-          <div className="card card-elevated">
-            <div className="card-header">
-              <h3 style={{ margin: 0 }}>Recent Transactions ({sales.length})</h3>
-            </div>
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Drug</th>
-                  <th style={{ textAlign: 'right' }}>Qty</th>
-                  <th style={{ textAlign: 'right' }}>Rate</th>
-                  <th style={{ textAlign: 'right' }}>Subtotal</th>
-                  <th style={{ textAlign: 'right' }}>GST</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th style={{ textAlign: 'center' }}>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {sales.map(sale => {
-                  const subtotal = parseFloat(sale.qty || 0) * parseFloat(sale.rate || 0);
-                  const gstAmount = subtotal * (parseFloat(sale.gstRate || 0) / 100);
-                  const total = subtotal + gstAmount;
-
-                  return (
-                    <tr key={sale.id}>
-                      <td>
-                        <strong style={{ color: 'var(--color-gray-900)' }}>
-                          {getDrugName(sale.drugId)}
-                        </strong>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        {parseFloat(sale.qty || 0).toFixed(2)}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        ₹{parseFloat(sale.rate || 0).toFixed(2)}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        ₹{subtotal.toFixed(2)}
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <span style={{ color: 'var(--color-warning-dark)' }}>
-                          ₹{gstAmount.toFixed(2)}
-                        </span>
-                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
-                          ({parseFloat(sale.gstRate || 0).toFixed(0)}%)
-                        </div>
-                      </td>
-                      <td style={{ textAlign: 'right' }}>
-                        <strong style={{ fontSize: 'var(--fs-lg)', color: 'var(--color-success-dark)' }}>
-                          ₹{total.toFixed(2)}
-                        </strong>
-                      </td>
-                      <td style={{ textAlign: 'center', color: 'var(--color-gray-500)', fontSize: 'var(--fs-xs)' }}>
-                        {new Date(sale.dispensedAt).toLocaleTimeString()}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+          <TableContainer component={Paper} elevation={2}>
+            <Box sx={{ padding: 2 }}>
+              <Typography variant="h6" sx={{ marginBottom: 2, fontWeight: 600 }}>
+                Recent Transactions ({sales.length})
+              </Typography>
+            </Box>
+            <Table aria-label="collapsible sales table">
+              <TableHead>
+                <TableRow sx={{ backgroundColor: 'var(--color-gray-50)' }}>
+                  <TableCell sx={{ width: '40px' }} />
+                  <TableCell sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Drug</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Qty</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Rate</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Subtotal</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>GST</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Total</TableCell>
+                  <TableCell align="center" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Time</TableCell>
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {sales.map((sale) => (
+                  <SalesRow key={sale.id} sale={sale} />
+                ))}
+              </TableBody>
+            </Table>
+          </TableContainer>
         )}
       </div>
     </div>
