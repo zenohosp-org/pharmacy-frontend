@@ -203,6 +203,111 @@ export default function CounterSale() {
     }
   };
 
+  const handlePrint = (saleRecord) => {
+    const receiptHTML = `
+      <html>
+        <head>
+          <title>Receipt - ${saleRecord.billNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
+            .receipt-header { text-align: center; margin-bottom: 20px; border-bottom: 2px solid #000; padding-bottom: 10px; }
+            .receipt-title { font-size: 18px; font-weight: bold; margin: 0; }
+            .receipt-subtitle { font-size: 12px; color: #666; margin: 5px 0 0 0; }
+            .bill-details { margin: 15px 0; font-size: 13px; }
+            .bill-row { display: flex; justify-content: space-between; padding: 5px 0; }
+            .items-table { width: 100%; margin: 15px 0; border-collapse: collapse; font-size: 12px; }
+            .items-table th { border-bottom: 1px solid #000; padding: 5px; text-align: left; font-weight: bold; }
+            .items-table td { border-bottom: 1px solid #ddd; padding: 5px; }
+            .items-table .qty { text-align: center; }
+            .items-table .rate { text-align: right; }
+            .items-table .total { text-align: right; font-weight: bold; }
+            .totals { margin: 15px 0; border-top: 2px solid #000; padding-top: 10px; font-size: 13px; }
+            .total-row { display: flex; justify-content: space-between; padding: 8px 0; }
+            .total-row.grand { font-weight: bold; font-size: 15px; border-top: 1px solid #000; padding-top: 10px; }
+            .footer { text-align: center; margin-top: 20px; font-size: 11px; color: #666; }
+            @media print {
+              body { margin: 0; padding: 0; }
+              .no-print { display: none; }
+            }
+          </style>
+        </head>
+        <body>
+          <div class="receipt-header">
+            <p class="receipt-title">ZenoPharmacy</p>
+            <p class="receipt-subtitle">Invoice Receipt</p>
+          </div>
+
+          <div class="bill-details">
+            <div class="bill-row">
+              <span>Bill #:</span>
+              <strong>${saleRecord.billNumber}</strong>
+            </div>
+            <div class="bill-row">
+              <span>Date:</span>
+              <span>${saleRecord.timestamp}</span>
+            </div>
+            <div class="bill-row">
+              <span>Payment:</span>
+              <span>${paymentMode || 'CASH'}</span>
+            </div>
+            ${saleRecord.patientPhone && saleRecord.patientPhone !== 'N/A' ? `<div class="bill-row"><span>Phone:</span><span>${saleRecord.patientPhone}</span></div>` : ''}
+            ${saleRecord.doctorName && saleRecord.doctorName !== 'N/A' ? `<div class="bill-row"><span>Doctor:</span><span>${saleRecord.doctorName}</span></div>` : ''}
+          </div>
+
+          <table class="items-table">
+            <thead>
+              <tr>
+                <th style="width: 40%;">Drug</th>
+                <th class="qty" style="width: 15%;">Qty</th>
+                <th class="rate" style="width: 20%;">Rate</th>
+                <th class="total" style="width: 25%;">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${saleRecord.items.map(item => `
+                <tr>
+                  <td>${item.drugName}</td>
+                  <td class="qty">${parseFloat(item.qty).toFixed(2)}</td>
+                  <td class="rate">₹${parseFloat(item.rate).toFixed(2)}</td>
+                  <td class="total">₹${(parseFloat(item.qty) * parseFloat(item.rate)).toFixed(2)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div class="total-row">
+              <span>Subtotal:</span>
+              <span>₹${saleRecord.subtotal.toFixed(2)}</span>
+            </div>
+            <div class="total-row">
+              <span>GST:</span>
+              <span>₹${saleRecord.totalGst.toFixed(2)}</span>
+            </div>
+            <div class="total-row grand">
+              <span>TOTAL:</span>
+              <span>₹${saleRecord.total.toFixed(2)}</span>
+            </div>
+          </div>
+
+          <div class="footer">
+            <p>Thank you for your purchase!</p>
+            <p style="font-size: 10px; margin-top: 10px;">Printed on ${new Date().toLocaleString()}</p>
+          </div>
+        </body>
+      </html>
+    `;
+
+    const printWindow = window.open('', '', 'width=600,height=800');
+    printWindow.document.write(receiptHTML);
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(() => {
+      printWindow.print();
+      printWindow.close();
+    }, 250);
+  };
+
   const requiresDoctorName = cart.some(item => ['H1', 'X'].includes(item.schedule));
   const { subtotal, totalGst, total } = calculateCartTotals();
 
@@ -661,6 +766,7 @@ export default function CounterSale() {
                     <th>Time</th>
                     <th style={{ textAlign: 'right' }}>Amount</th>
                     <th style={{ textAlign: 'center' }}>Items</th>
+                    <th style={{ textAlign: 'center' }}>Action</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -677,6 +783,14 @@ export default function CounterSale() {
                         <span className="badge badge-primary">
                           {sale.items.length}
                         </span>
+                      </td>
+                      <td style={{ textAlign: 'center' }}>
+                        <button
+                          onClick={() => handlePrint(sale)}
+                          className="btn btn-sm btn-secondary"
+                        >
+                          🖨️ Print
+                        </button>
                       </td>
                     </tr>
                   ))}
