@@ -13,7 +13,14 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
     strength: '',
     unit: '',
     reorderQty: 0,
-    manufacturerId: ''
+    manufacturerId: '',
+    purpose: '',
+    sideEffects: '',
+    chemicalClass: '',
+    saltName: '',
+    stripsPerPack: '',
+    unitsPerStrip: '',
+    imageUrl: ''
   });
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -32,7 +39,14 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
         strength: drug.strength || '',
         unit: drug.unit || '',
         reorderQty: drug.reorderQty || 0,
-        manufacturerId: drug.manufacturerId || ''
+        manufacturerId: drug.manufacturerId || '',
+        purpose: drug.purpose || '',
+        sideEffects: drug.sideEffects || '',
+        chemicalClass: drug.chemicalClass || '',
+        saltName: drug.saltName || '',
+        stripsPerPack: drug.stripsPerPack || '',
+        unitsPerStrip: drug.unitsPerStrip || '',
+        imageUrl: drug.imageUrl || ''
       });
     }
   }, [drug]);
@@ -51,7 +65,7 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'reorderQty' ? parseInt(value) || 0 : value
+      [name]: ['reorderQty', 'stripsPerPack', 'unitsPerStrip'].includes(name) ? (parseInt(value) || 0) : value
     }));
   };
 
@@ -221,6 +235,94 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
                 onChange={handleChange}
                 className="form-input"
                 placeholder="0"
+              />
+            </div>
+
+            <hr style={{ margin: '20px 0', opacity: 0.2 }} />
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-700)', marginBottom: '12px' }}>Drug Info</h3>
+
+            <div className="form-group">
+              <label className="form-label">Salt Name</label>
+              <input
+                type="text"
+                name="saltName"
+                value={formData.saltName}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="e.g., Paracetamol"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Purpose / Indication</label>
+              <textarea
+                name="purpose"
+                value={formData.purpose}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="e.g., Used for fever and pain relief"
+                rows="2"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Side Effects</label>
+              <textarea
+                name="sideEffects"
+                value={formData.sideEffects}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="e.g., Nausea, dizziness in rare cases"
+                rows="2"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Chemical Class</label>
+              <input
+                type="text"
+                name="chemicalClass"
+                value={formData.chemicalClass}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="e.g., Analgesic"
+              />
+            </div>
+
+            <div className="form-row-2col">
+              <div className="form-group">
+                <label className="form-label">Strips Per Pack</label>
+                <input
+                  type="number"
+                  name="stripsPerPack"
+                  value={formData.stripsPerPack}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="e.g., 1"
+                />
+              </div>
+              <div className="form-group">
+                <label className="form-label">Units Per Strip</label>
+                <input
+                  type="number"
+                  name="unitsPerStrip"
+                  value={formData.unitsPerStrip}
+                  onChange={handleChange}
+                  className="form-input"
+                  placeholder="e.g., 10"
+                />
+              </div>
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Image URL</label>
+              <input
+                type="text"
+                name="imageUrl"
+                value={formData.imageUrl}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="e.g., https://example.com/image.jpg"
               />
             </div>
 

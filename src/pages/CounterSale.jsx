@@ -16,6 +16,7 @@ export default function CounterSale() {
   const [rate, setRate] = useState('');
   const [gstRate, setGstRate] = useState('9');
   const [patientPhone, setPatientPhone] = useState('');
+  const [doctorName, setDoctorName] = useState('');
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -112,7 +113,10 @@ export default function CounterSale() {
       gstRate: parseFloat(gstRate),
       subtotal,
       gstAmount,
-      total
+      total,
+      schedule: selectedDrug.schedule,
+      stripsPerPack: selectedDrug.stripsPerPack,
+      unitsPerStrip: selectedDrug.unitsPerStrip
     };
 
     setCart([...cart, item]);
@@ -166,6 +170,7 @@ export default function CounterSale() {
         billNumber: `BILL-${new Date().getTime()}`,
         timestamp: new Date().toLocaleString(),
         patientPhone: patientPhone || 'N/A',
+        doctorName: doctorName || 'N/A',
         items: [...cart],
         subtotal,
         totalGst,
@@ -176,6 +181,7 @@ export default function CounterSale() {
       setSuccess(`Billing successful! Bill number: ${saleRecord.billNumber}`);
       setCart([]);
       setPatientPhone('');
+      setDoctorName('');
       setTimeout(() => setSuccess(null), 5000);
     } catch (e) {
       setError('Billing failed: ' + e.message);
@@ -185,6 +191,7 @@ export default function CounterSale() {
     }
   };
 
+  const requiresDoctorName = cart.some(item => ['H1', 'X'].includes(item.schedule));
   const { subtotal, totalGst, total } = calculateCartTotals();
 
   return (
@@ -351,6 +358,21 @@ export default function CounterSale() {
                       />
                     </div>
 
+                    {/* Packaging Label */}
+                    {qty && selectedDrug?.stripsPerPack && selectedDrug?.unitsPerStrip && (
+                      <div style={{
+                        padding: 'var(--spacing-3)',
+                        backgroundColor: 'var(--color-info-subtle)',
+                        borderLeft: '4px solid var(--color-info)',
+                        borderRadius: 'var(--radius-lg)',
+                        marginBottom: 'var(--spacing-5)',
+                        fontSize: 'var(--fs-sm)',
+                        color: 'var(--color-info-dark)'
+                      }}>
+                        <strong>{qty} strips</strong> × <strong>{selectedDrug.unitsPerStrip}</strong> = <strong>{(parseFloat(qty) * selectedDrug.unitsPerStrip).toFixed(0)} tablets</strong>
+                      </div>
+                    )}
+
                     {/* Rate Preview */}
                     {qty && rate && (
                       <div style={{
@@ -417,9 +439,14 @@ export default function CounterSale() {
                         <div style={{ fontWeight: 'var(--fw-semibold)', marginBottom: 'var(--spacing-1)' }}>
                           {item.drugName}
                         </div>
-                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
+                        <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', marginBottom: 'var(--spacing-1)' }}>
                           {item.qty} × ₹{item.rate.toFixed(2)} = ₹{item.total.toFixed(2)}
                         </div>
+                        {item.stripsPerPack && item.unitsPerStrip && (
+                          <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-info)', fontWeight: '500' }}>
+                            {item.qty} strips = {(item.qty * item.unitsPerStrip).toFixed(0)} tablets
+                          </div>
+                        )}
                       </div>
                       <button
                         onClick={() => handleRemoveFromCart(item.id)}
@@ -473,6 +500,30 @@ export default function CounterSale() {
                   </div>
                 </div>
 
+                {requiresDoctorName && (
+                  <div className="form-group" style={{
+                    padding: 'var(--spacing-3)',
+                    backgroundColor: 'var(--color-warning-subtle)',
+                    borderLeft: '4px solid var(--color-warning)',
+                    borderRadius: 'var(--radius-lg)',
+                    marginBottom: 'var(--spacing-5)'
+                  }}>
+                    <label className="form-label" style={{ fontWeight: '600', marginBottom: 'var(--spacing-2)' }}>
+                      Doctor Name <span style={{ color: 'var(--color-danger)' }}>*</span>
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Prescribing doctor's name"
+                      value={doctorName}
+                      onChange={(e) => setDoctorName(e.target.value)}
+                      className="form-input"
+                    />
+                    <small style={{ color: 'var(--color-warning-dark)', display: 'block', marginTop: 'var(--spacing-1)' }}>
+                      Required for Schedule H1/X drugs
+                    </small>
+                  </div>
+                )}
+
                 <div className="form-group">
                   <label className="form-label">Patient Phone (Optional)</label>
                   <input
@@ -486,7 +537,7 @@ export default function CounterSale() {
 
                 <button
                   onClick={handleCheckout}
-                  disabled={loading || cart.length === 0}
+                  disabled={loading || cart.length === 0 || (requiresDoctorName && !doctorName.trim())}
                   className="btn btn-success btn-block"
                   style={{ marginBottom: 'var(--spacing-3)' }}
                 >
@@ -497,6 +548,7 @@ export default function CounterSale() {
                   onClick={() => {
                     setCart([]);
                     setPatientPhone('');
+                    setDoctorName('');
                     setError(null);
                   }}
                   className="btn btn-secondary btn-block"
