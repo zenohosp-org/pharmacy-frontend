@@ -135,3 +135,19 @@ export const getCounterSales = async (storeId) => {
   }
   return [];
 };
+
+export const getDrugAlternatives = async (drugId) => {
+  const response = await fetch(`${API_BASE}/drugs/${drugId}/alternatives`);
+  if (!response.ok) throw new Error('Failed to fetch alternatives');
+  return response.json();
+};
+
+export const addDrugAlternative = async (drugId, alternativeDrugId, reason) => {
+  const response = await fetch(`${API_BASE}/drugs/${drugId}/alternatives`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ alternativeDrugId, reason }),
+  });
+  if (!response.ok) throw new Error('Failed to add alternative');
+  return response.json();
+};

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, getBatches, createCounterSaleBulk } from '../api/pharmacyClient';
+import { getDrugs, getBatches, createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClient';
 import { Link } from 'react-router-dom';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
@@ -25,6 +25,8 @@ export default function CounterSale() {
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [completedSales, setCompletedSales] = useState([]);
+  const [alternatives, setAlternatives] = useState([]);
+  const [showAlternatives, setShowAlternatives] = useState(false);
 
   useEffect(() => {
     fetchDrugs();
@@ -61,12 +63,16 @@ export default function CounterSale() {
     setBatches([]);
     setRate(drug.sellingPrice ? drug.sellingPrice.toString() : '');
     setShowDrugInfo(false);
+    setShowAlternatives(false);
+    setAlternatives([]);
 
     try {
       const batchData = await getBatches(drug.id);
       setBatches(batchData);
+      const altData = await getDrugAlternatives(drug.id);
+      setAlternatives(altData);
     } catch (e) {
-      console.error('Failed to fetch batches:', e);
+      console.error('Failed to fetch batches or alternatives:', e);
     }
   };
 
@@ -448,6 +454,61 @@ export default function CounterSale() {
                             <strong>Packaging:</strong> {selectedDrug.stripsPerPack} strip × {selectedDrug.unitsPerStrip} tablets
                           </div>
                         )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Alternatives Panel */}
+                {selectedDrug && alternatives.length > 0 && (
+                  <div style={{
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--color-warning-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    marginBottom: 'var(--spacing-5)',
+                    border: '1px solid var(--color-warning-light)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)'
+                  }}
+                  onClick={() => setShowAlternatives(!showAlternatives)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showAlternatives ? 'var(--spacing-3)' : 0 }}>
+                      <strong style={{ color: 'var(--color-warning-dark)' }}>💊 Alternative Medicines</strong>
+                      <span style={{ color: 'var(--color-warning-dark)', fontSize: 'var(--fs-lg)' }}>{showAlternatives ? '▼' : '▶'}</span>
+                    </div>
+                    {showAlternatives && (
+                      <div style={{ marginTop: 'var(--spacing-3)', fontSize: 'var(--fs-sm)', color: 'var(--color-warning-dark)' }}>
+                        {alternatives.map((alt, idx) => (
+                          <div
+                            key={idx}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const altDrug = drugs.find(d => d.id === alt.alternativeDrugId);
+                              if (altDrug) handleDrugSelect(altDrug);
+                            }}
+                            style={{
+                              padding: 'var(--spacing-2)',
+                              marginBottom: 'var(--spacing-2)',
+                              backgroundColor: 'var(--color-white)',
+                              borderRadius: 'var(--radius-md)',
+                              cursor: 'pointer',
+                              border: '1px solid var(--color-warning-light)',
+                              transition: 'all var(--transition-fast)',
+                              display: 'flex',
+                              justifyContent: 'space-between',
+                              alignItems: 'center'
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.backgroundColor = 'var(--color-gray-50)'}
+                            onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'var(--color-white)'}
+                          >
+                            <div>
+                              <div style={{ fontWeight: 'var(--fw-semibold)' }}>{alt.drugName}</div>
+                              <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)' }}>
+                                {alt.genericName} {alt.reason && `• ${alt.reason}`}
+                              </div>
+                            </div>
+                            <span style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-400)' }}>→</span>
+                          </div>
+                        ))}
                       </div>
                     )}
                   </div>
