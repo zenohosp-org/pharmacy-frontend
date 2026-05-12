@@ -20,8 +20,8 @@ export default function App() {
         <Route path="/sales-ledger" element={<Layout><SalesLedger /></Layout>} />
         <Route path="/pharmacy/dispensing" element={<Layout><Dispensing /></Layout>} />
         <Route path="/pharmacy/reports" element={<Layout><Reports /></Layout>} />
-        <Route path="/" element={<Navigate to="/pharmacy/stock" />} />
-        <Route path="*" element={<Navigate to="/pharmacy/stock" />} />
+        <Route path="/" element={<Navigate to="/pharmacy/counter-sale" />} />
+        <Route path="*" element={<Navigate to="/pharmacy/counter-sale" />} />
       </Routes>
     </Router>
   );

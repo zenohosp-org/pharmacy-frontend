@@ -13,7 +13,7 @@ export default function Layout({ children }) {
         ['/pharmacy/drugs', '/pharmacy/stock'].includes(location.pathname)
     );
     const [operationsOpen, setOperationsOpen] = useState(
-        ['/pharmacy/stock/receive', '/pharmacy/counter-sale'].includes(location.pathname)
+        ['/pharmacy/stock/receive'].includes(location.pathname)
     );
     const [reportsOpen, setReportsOpen] = useState(
         ['/pharmacy/sales-ledger', '/pharmacy/dispensing', '/pharmacy/reports'].includes(location.pathname)
@@ -69,6 +69,18 @@ export default function Layout({ children }) {
 
                 <nav className="sidebar-nav">
                     <ul className="sidebar-menu">
+                        {/* Counter Sale */}
+                        <li>
+                            <Link
+                                to="/pharmacy/counter-sale"
+                                className={`sidebar-link ${isActive('/pharmacy/counter-sale') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <ShoppingCart className="sidebar-icon" size={18} />
+                                Counter Sale
+                            </Link>
+                        </li>
+
                         {/* Stock Dashboard */}
                         <li>
                             <Link
@@ -114,7 +126,6 @@ export default function Layout({ children }) {
                                 {operationsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/stock/receive" icon={Inbox} label="Receive Stock" />
-                                        <NavLink to="/pharmacy/counter-sale" icon={ShoppingCart} label="Counter Sale" />
                                     </div>
                                 )}
                             </div>
