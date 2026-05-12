@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, getBatches, createCounterSale } from '../api/pharmacyClient';
+import { getDrugs, getBatches, createCounterSaleBulk } from '../api/pharmacyClient';
 import { Link } from 'react-router-dom';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
@@ -12,11 +12,14 @@ export default function CounterSale() {
   const [selectedDrug, setSelectedDrug] = useState(null);
   const [batches, setBatches] = useState([]);
   const [selectedBatch, setSelectedBatch] = useState(null);
+  const [showDrugInfo, setShowDrugInfo] = useState(false);
   const [qty, setQty] = useState('');
   const [rate, setRate] = useState('');
   const [gstRate, setGstRate] = useState('9');
+  const [discount, setDiscount] = useState('0');
   const [patientPhone, setPatientPhone] = useState('');
   const [doctorName, setDoctorName] = useState('');
+  const [paymentMode, setPaymentMode] = useState('CASH');
   const [cart, setCart] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -57,6 +60,7 @@ export default function CounterSale() {
     setSelectedBatch(null);
     setBatches([]);
     setRate(drug.sellingPrice ? drug.sellingPrice.toString() : '');
+    setShowDrugInfo(false);
 
     try {
       const batchData = await getBatches(drug.id);
@@ -111,6 +115,7 @@ export default function CounterSale() {
       qty: parseFloat(qty),
       rate: parseFloat(rate),
       gstRate: parseFloat(gstRate),
+      discount: parseFloat(discount) || 0,
       subtotal,
       gstAmount,
       total,
@@ -126,6 +131,7 @@ export default function CounterSale() {
     setQty('');
     setRate('');
     setGstRate('9');
+    setDiscount('0');
   };
 
   const handleRemoveFromCart = (itemId) => {
@@ -152,22 +158,28 @@ export default function CounterSale() {
     setSuccess(null);
 
     try {
-      for (const item of cart) {
-        await createCounterSale({
+      // Create bulk checkout payload
+      const bulkPayload = {
+        storeId: STORE_ID,
+        patientPhone: patientPhone || null,
+        paymentMode: paymentMode || 'CASH',
+        doctorName: doctorName || null,
+        items: cart.map(item => ({
           drugId: item.drugId,
-          storeId: STORE_ID,
           qty: item.qty,
           rate: item.rate,
           gstRate: item.gstRate,
-          patientPhone: patientPhone || null,
-          paymentMode: 'CASH'
-        });
-      }
+          discount: item.discount || 0
+        }))
+      };
+
+      // Single API call for the entire transaction
+      const billResponse = await createCounterSaleBulk(bulkPayload);
 
       const { subtotal, totalGst, total } = calculateCartTotals();
       const saleRecord = {
-        id: Date.now(),
-        billNumber: `BILL-${new Date().getTime()}`,
+        id: billResponse.id,
+        billNumber: billResponse.billNumber, // Use real bill number from backend
         timestamp: new Date().toLocaleString(),
         patientPhone: patientPhone || 'N/A',
         doctorName: doctorName || 'N/A',
@@ -288,6 +300,54 @@ export default function CounterSale() {
                   )}
                 </div>
 
+                {/* Drug Info Panel */}
+                {selectedDrug && (selectedDrug.purpose || selectedDrug.sideEffects || selectedDrug.saltName || selectedDrug.chemicalClass) && (
+                  <div style={{
+                    padding: 'var(--spacing-4)',
+                    backgroundColor: 'var(--color-info-subtle)',
+                    borderRadius: 'var(--radius-lg)',
+                    marginBottom: 'var(--spacing-5)',
+                    border: '1px solid var(--color-info-light)',
+                    cursor: 'pointer',
+                    transition: 'all var(--transition-fast)'
+                  }}
+                  onClick={() => setShowDrugInfo(!showDrugInfo)}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: showDrugInfo ? 'var(--spacing-3)' : 0 }}>
+                      <strong style={{ color: 'var(--color-info-dark)' }}>ℹ️ Drug Info</strong>
+                      <span style={{ color: 'var(--color-info-dark)', fontSize: 'var(--fs-lg)' }}>{showDrugInfo ? '▼' : '▶'}</span>
+                    </div>
+                    {showDrugInfo && (
+                      <div style={{ marginTop: 'var(--spacing-3)', fontSize: 'var(--fs-sm)', color: 'var(--color-info-dark)', lineHeight: '1.6' }}>
+                        {selectedDrug.saltName && (
+                          <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                            <strong>Salt:</strong> {selectedDrug.saltName}
+                          </div>
+                        )}
+                        {selectedDrug.chemicalClass && (
+                          <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                            <strong>Class:</strong> {selectedDrug.chemicalClass}
+                          </div>
+                        )}
+                        {selectedDrug.purpose && (
+                          <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                            <strong>Purpose:</strong> {selectedDrug.purpose}
+                          </div>
+                        )}
+                        {selectedDrug.sideEffects && (
+                          <div style={{ marginBottom: 'var(--spacing-2)' }}>
+                            <strong>Side Effects:</strong> {selectedDrug.sideEffects}
+                          </div>
+                        )}
+                        {selectedDrug.stripsPerPack && selectedDrug.unitsPerStrip && (
+                          <div>
+                            <strong>Packaging:</strong> {selectedDrug.stripsPerPack} strip × {selectedDrug.unitsPerStrip} tablets
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
+
                 {/* Batch Selection */}
                 {selectedDrug && batches.length > 0 && (
                   <div className="form-group" style={{ marginBottom: 'var(--spacing-5)' }}>
@@ -346,16 +406,29 @@ export default function CounterSale() {
                       </div>
                     </div>
 
-                    <div className="form-group" style={{ marginBottom: 'var(--spacing-5)' }}>
-                      <label className="form-label">GST Rate %</label>
-                      <input
-                        type="number"
-                        placeholder="0.00"
-                        value={gstRate}
-                        onChange={(e) => setGstRate(e.target.value)}
-                        step="0.01"
-                        className="form-input"
-                      />
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--spacing-4)', marginBottom: 'var(--spacing-5)' }}>
+                      <div className="form-group">
+                        <label className="form-label">GST Rate %</label>
+                        <input
+                          type="number"
+                          placeholder="0.00"
+                          value={gstRate}
+                          onChange={(e) => setGstRate(e.target.value)}
+                          step="0.01"
+                          className="form-input"
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label className="form-label">Discount ₹</label>
+                        <input
+                          type="number"
+                          placeholder="0.00"
+                          value={discount}
+                          onChange={(e) => setDiscount(e.target.value)}
+                          step="0.01"
+                          className="form-input"
+                        />
+                      </div>
                     </div>
 
                     {/* Packaging Label */}
@@ -500,6 +573,19 @@ export default function CounterSale() {
                   </div>
                 </div>
 
+                <div className="form-group" style={{ marginBottom: 'var(--spacing-5)' }}>
+                  <label className="form-label">Payment Mode</label>
+                  <select
+                    value={paymentMode}
+                    onChange={(e) => setPaymentMode(e.target.value)}
+                    className="form-select"
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="CARD">Card</option>
+                    <option value="UPI">UPI</option>
+                  </select>
+                </div>
+
                 {requiresDoctorName && (
                   <div className="form-group" style={{
                     padding: 'var(--spacing-3)',
@@ -549,6 +635,7 @@ export default function CounterSale() {
                     setCart([]);
                     setPatientPhone('');
                     setDoctorName('');
+                    setPaymentMode('CASH');
                     setError(null);
                   }}
                   className="btn btn-secondary btn-block"

@@ -114,6 +114,16 @@ export const createCounterSale = async (payload) => {
   return response.json();
 };
 
+export const createCounterSaleBulk = async (payload) => {
+  const response = await fetch(`${API_BASE}/dispensing/counter-sale/bulk`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error('Failed to create bulk counter sale');
+  return response.json();
+};
+
 export const getCounterSales = async (storeId) => {
   try {
     const response = await fetch(`${API_BASE}/dispensing/counter-sales?storeId=${storeId}`);
