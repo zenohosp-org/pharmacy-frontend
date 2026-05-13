@@ -53,6 +53,17 @@ export const importDrugs = async (drugs) => {
   return response.json();
 };
 
+export const importDrugsExcel = async (file) => {
+  const formData = new FormData();
+  formData.append('file', file);
+  const response = await fetch(`${API_BASE}/drugs/import-excel`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!response.ok) throw new Error('Failed to import Excel file');
+  return response.json();
+};
+
 export const getVendors = async () => {
   try {
     const response = await fetch('https://api-inventory.zenohosp.com/api/vendors');

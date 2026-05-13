@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, searchDrugs, deleteDrug, importDrugs } from '../api/pharmacyClient';
+import { getDrugs, searchDrugs, deleteDrug, importDrugs, importDrugsExcel } from '../api/pharmacyClient';
 import AddEditDrugModal from '../components/AddEditDrugModal';
 import './DrugMaster.css';
 
@@ -94,63 +94,91 @@ export default function DrugMaster() {
     handleModalClose();
   };
 
-  const handleCSVUpload = async (event) => {
+  const handleFileUpload = async (event) => {
     const file = event.target.files[0];
     if (!file) return;
+
+    const isExcel = /\.(xlsx|xls)$/.test(file.name);
+    const isCSV = /\.csv$/.test(file.name);
 
     try {
       setImportError(null);
       setImportSuccess(null);
-      const text = await file.text();
-      const lines = text.split('\n').map(l => l.trim()).filter(l => l);
 
-      if (lines.length < 2) {
-        setImportError('CSV must have at least a header row and one data row');
-        event.target.value = '';
-        return;
-      }
-
-      const headers = lines[0].split(',').map(h => h.trim());
-      const headerMap = {};
-      headers.forEach((h, i) => {
-        headerMap[h] = i;
-      });
-
-      const drugRequests = [];
-      const rows = [];
-
-      for (let i = 1; i < lines.length; i++) {
-        const values = lines[i].split(',').map(v => v.trim());
-        const drug = {
-          brandName: values[headerMap['brandName']] || '',
-          genericName: values[headerMap['genericName']] || '',
-          hsnCode: values[headerMap['hsnCode']] || '',
-          schedule: values[headerMap['schedule']] || '',
-          category: values[headerMap['category']] || '',
-          form: values[headerMap['form']] || '',
-          strength: values[headerMap['strength']] || '',
-          unit: values[headerMap['unit']] || '',
-          reorderQty: parseInt(values[headerMap['reorderQty']]) || 0,
-          manufacturerId: values[headerMap['manufacturerId']] || null
-        };
-        drugRequests.push(drug);
-        rows.push({ row: i + 1, data: values });
-      }
-
-      const result = await importDrugs(drugRequests);
-      setImportSuccess({
-        imported: result.imported.length,
-        errors: result.errors
-      });
-
-      if (result.imported.length > 0) {
-        await fetchDrugs();
+      if (isExcel) {
+        await handleExcelUpload(file);
+      } else if (isCSV) {
+        await handleCSVUpload(file);
+      } else {
+        setImportError('Please upload a CSV or Excel file (.xlsx, .xls)');
       }
     } catch (e) {
-      setImportError('Failed to parse CSV: ' + e.message);
+      setImportError('Failed to process file: ' + e.message);
       console.error(e);
     }
     event.target.value = '';
+  };
+
+  const handleExcelUpload = async (file) => {
+    try {
+      const result = await importDrugsExcel(file);
+      setImportSuccess({
+        imported: result.imported?.length || 0,
+        errors: [...(result.errors || []), ...(result.parseErrors || [])]
+      });
+
+      if (result.imported && result.imported.length > 0) {
+        await fetchDrugs();
+      }
+    } catch (e) {
+      setImportError('Failed to import Excel file: ' + e.message);
+      console.error(e);
+    }
+  };
+
+  const handleCSVUpload = async (file) => {
+    const text = await file.text();
+    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
+
+    if (lines.length < 2) {
+      setImportError('CSV must have at least a header row and one data row');
+      return;
+    }
+
+    const headers = lines[0].split(',').map(h => h.trim());
+    const headerMap = {};
+    headers.forEach((h, i) => {
+      headerMap[h] = i;
+    });
+
+    const drugRequests = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      const values = lines[i].split(',').map(v => v.trim());
+      const drug = {
+        brandName: values[headerMap['brandName']] || '',
+        genericName: values[headerMap['genericName']] || '',
+        hsnCode: values[headerMap['hsnCode']] || '',
+        schedule: values[headerMap['schedule']] || '',
+        category: values[headerMap['category']] || '',
+        form: values[headerMap['form']] || '',
+        strength: values[headerMap['strength']] || '',
+        unit: values[headerMap['unit']] || '',
+        reorderQty: parseInt(values[headerMap['reorderQty']]) || 0,
+        manufacturerId: values[headerMap['manufacturerId']] || null
+      };
+      drugRequests.push(drug);
+    }
+
+    const result = await importDrugs(drugRequests);
+    setImportSuccess({
+      imported: result.imported.length,
+      errors: result.errors
+    });
+
+    if (result.imported.length > 0) {
+      await fetchDrugs();
+    }
   };
 
   return (
@@ -195,11 +223,11 @@ export default function DrugMaster() {
         </button>
 
         <label className="file-upload-label">
-          Import CSV
+          Import Data
           <input
             type="file"
-            accept=".csv"
-            onChange={handleCSVUpload}
+            accept=".csv,.xlsx,.xls"
+            onChange={handleFileUpload}
             className="file-upload-input"
           />
         </label>
