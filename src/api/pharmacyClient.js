@@ -1,164 +1,135 @@
-const API_BASE = 'http://localhost:8083/api/pharmacy';
+import axios from 'axios';
+
+export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8083';
+
+const api = axios.create({
+  baseURL: API_BASE_URL,
+  withCredentials: true,
+});
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401 || error.response?.status === 403) {
+      window.location.href = `${API_BASE_URL}/oauth2/authorization/directory`;
+    }
+    return Promise.reject(error);
+  }
+);
+
+export const getMe = () => api.get('/api/user/me');
+
+export const logout = () => api.post('/api/auth/logout');
 
 export const getDrugs = async () => {
-  const response = await fetch(`${API_BASE}/drugs`);
-  if (!response.ok) throw new Error('Failed to fetch drugs');
-  return response.json();
+  const response = await api.get('/api/pharmacy/drugs');
+  return response.data;
 };
 
 export const createDrug = async (drug) => {
-  const response = await fetch(`${API_BASE}/drugs`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(drug),
-  });
-  if (!response.ok) throw new Error('Failed to create drug');
-  return response.json();
+  const response = await api.post('/api/pharmacy/drugs', drug);
+  return response.data;
 };
 
 export const updateDrug = async (drugId, drug) => {
-  const response = await fetch(`${API_BASE}/drugs/${drugId}`, {
-    method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(drug),
-  });
-  if (!response.ok) throw new Error('Failed to update drug');
-  return response.json();
+  const response = await api.put(`/api/pharmacy/drugs/${drugId}`, drug);
+  return response.data;
 };
 
 export const deleteDrug = async (drugId) => {
-  const response = await fetch(`${API_BASE}/drugs/${drugId}`, {
-    method: 'DELETE',
-  });
-  if (!response.ok) throw new Error('Failed to delete drug');
-  return response.ok;
+  const response = await api.delete(`/api/pharmacy/drugs/${drugId}`);
+  return response.data;
 };
 
 export const searchDrugs = async (query, schedule) => {
   const params = new URLSearchParams();
   if (query) params.append('q', query);
   if (schedule) params.append('schedule', schedule);
-  const response = await fetch(`${API_BASE}/drugs/search?${params}`);
-  if (!response.ok) throw new Error('Failed to search drugs');
-  return response.json();
+  const response = await api.get(`/api/pharmacy/drugs/search?${params}`);
+  return response.data;
 };
 
 export const importDrugs = async (drugs) => {
-  const response = await fetch(`${API_BASE}/drugs/import`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(drugs),
-  });
-  if (!response.ok) throw new Error('Failed to import drugs');
-  return response.json();
+  const response = await api.post('/api/pharmacy/drugs/import', drugs);
+  return response.data;
 };
 
 export const importDrugsExcel = async (file) => {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch(`${API_BASE}/drugs/import-excel`, {
-    method: 'POST',
-    body: formData,
-  });
-  if (!response.ok) throw new Error('Failed to import Excel file');
-  return response.json();
+  const response = await api.post('/api/pharmacy/drugs/import-excel', formData);
+  return response.data;
 };
 
 export const getVendors = async () => {
   try {
-    const response = await fetch('https://api-inventory.zenohosp.com/api/vendors');
-    if (!response.ok) throw new Error('Failed to fetch vendors');
-    return response.json();
-  } catch (e) {
+    const response = await api.get('https://api-inventory.zenohosp.com/api/vendors');
+    return response.data;
+  } catch {
     console.warn('Vendors API not available, returning empty list');
     return [];
   }
 };
 
 export const getStock = async (drugId) => {
-  const response = await fetch(`${API_BASE}/stock/${drugId}`);
-  if (!response.ok) throw new Error('Failed to fetch stock');
-  return response.json();
+  const response = await api.get(`/api/pharmacy/stock/${drugId}`);
+  return response.data;
 };
 
 export const getAllStock = async () => {
-  const response = await fetch(`${API_BASE}/stock`);
-  if (!response.ok) throw new Error('Failed to fetch all stock');
-  return response.json();
+  const response = await api.get('/api/pharmacy/stock');
+  return response.data;
 };
 
 export const receiveStock = async (payload) => {
-  const response = await fetch(`${API_BASE}/stock/receive`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) throw new Error('Failed to receive stock');
-  return response.json();
+  const response = await api.post('/api/pharmacy/stock/receive', payload);
+  return response.data;
 };
 
 export const getBatches = async (drugId) => {
-  const response = await fetch(`${API_BASE}/stock/${drugId}/batches`);
-  if (!response.ok) throw new Error('Failed to fetch batches');
-  return response.json();
+  const response = await api.get(`/api/pharmacy/stock/${drugId}/batches`);
+  return response.data;
 };
 
 export const getExpiryAlerts = async (days = 30) => {
-  const response = await fetch(`${API_BASE}/stock/expiry-alerts?days=${days}`);
-  if (!response.ok) throw new Error('Failed to fetch expiry alerts');
-  return response.json();
+  const response = await api.get(`/api/pharmacy/stock/expiry-alerts?days=${days}`);
+  return response.data;
 };
 
 export const getReorderAlerts = async () => {
-  const response = await fetch(`${API_BASE}/stock/reorder-alerts`);
-  if (!response.ok) throw new Error('Failed to fetch reorder alerts');
-  return response.json();
+  const response = await api.get('/api/pharmacy/stock/reorder-alerts');
+  return response.data;
 };
 
 export const createCounterSale = async (payload) => {
-  const response = await fetch(`${API_BASE}/dispensing/counter-sale`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) throw new Error('Failed to create counter sale');
-  return response.json();
+  const response = await api.post('/api/pharmacy/dispensing/counter-sale', payload);
+  return response.data;
 };
 
 export const createCounterSaleBulk = async (payload) => {
-  const response = await fetch(`${API_BASE}/dispensing/counter-sale/bulk`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(payload),
-  });
-  if (!response.ok) throw new Error('Failed to create bulk counter sale');
-  return response.json();
+  const response = await api.post('/api/pharmacy/dispensing/counter-sale/bulk', payload);
+  return response.data;
 };
 
 export const getCounterSales = async (storeId) => {
   try {
-    const response = await fetch(`${API_BASE}/dispensing/counter-sales?storeId=${storeId}`);
-    if (response.ok) {
-      return response.json();
-    }
-  } catch (e) {
+    const response = await api.get(`/api/pharmacy/dispensing/counter-sales?storeId=${storeId}`);
+    return response.data || [];
+  } catch {
     console.warn('Counter sales API not available');
+    return [];
   }
-  return [];
 };
 
 export const getDrugAlternatives = async (drugId) => {
-  const response = await fetch(`${API_BASE}/drugs/${drugId}/alternatives`);
-  if (!response.ok) throw new Error('Failed to fetch alternatives');
-  return response.json();
+  const response = await api.get(`/api/pharmacy/drugs/${drugId}/alternatives`);
+  return response.data;
 };
 
 export const addDrugAlternative = async (drugId, alternativeDrugId, reason) => {
-  const response = await fetch(`${API_BASE}/drugs/${drugId}/alternatives`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ alternativeDrugId, reason }),
+  const response = await api.post(`/api/pharmacy/drugs/${drugId}/alternatives`, {
+    alternativeDrugId,
+    reason,
   });
-  if (!response.ok) throw new Error('Failed to add alternative');
-  return response.json();
+  return response.data;
 };
