@@ -1,0 +1,49 @@
+/* StockDashboard Page Styles */
+
+.stock-dashboard-container {
+  padding: var(--spacing-8);
+  background-color: var(--color-bg-page);
+}
+
+.page-title {
+  font-size: var(--fs-3xl);
+  font-weight: var(--fw-bold);
+  color: var(--color-gray-900);
+  margin-bottom: var(--spacing-2);
+}
+
+.page-subtitle {
+  font-size: var(--fs-base);
+  color: var(--color-gray-600);
+  margin-bottom: var(--spacing-6);
+}
+
+.stock-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: var(--spacing-6);
+}
+
+.stock-card {
+  background-color: var(--color-white);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-gray-200);
+  padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--transition-base);
+}
+
+.stock-card:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+  .stock-dashboard-container {
+    padding: var(--spacing-4);
+  }
+
+  .stock-grid {
+    grid-template-columns: 1fr;
+  }
+}
