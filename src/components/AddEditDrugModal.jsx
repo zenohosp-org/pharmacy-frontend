@@ -20,7 +20,8 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
     saltName: '',
     stripsPerPack: '',
     unitsPerStrip: '',
-    imageUrl: ''
+    imageUrl: '',
+    inventoryItemId: ''
   });
   const [vendors, setVendors] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -46,7 +47,8 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
         saltName: drug.saltName || '',
         stripsPerPack: drug.stripsPerPack || '',
         unitsPerStrip: drug.unitsPerStrip || '',
-        imageUrl: drug.imageUrl || ''
+        imageUrl: drug.imageUrl || '',
+        inventoryItemId: drug.inventoryItemId || ''
       });
     }
   }, [drug]);
@@ -324,6 +326,23 @@ export default function AddEditDrugModal({ drug, onClose, onSave }) {
                 className="form-input"
                 placeholder="e.g., https://example.com/image.jpg"
               />
+            </div>
+
+            <hr style={{ margin: '20px 0', opacity: 0.2 }} />
+            <h3 style={{ fontSize: '14px', fontWeight: '600', color: 'var(--color-gray-700)', marginBottom: '12px' }}>Inventory Link</h3>
+            <div className="form-group">
+              <label className="form-label">Inventory Item ID</label>
+              <input
+                type="text"
+                name="inventoryItemId"
+                value={formData.inventoryItemId}
+                onChange={handleChange}
+                className="form-input"
+                placeholder="Paste UUID from Inventory app (enables PO auto-sync)"
+              />
+              <p style={{ fontSize: '12px', color: 'var(--color-gray-500)', marginTop: '4px' }}>
+                Link this drug to an Inventory item (billingGroup = PHARMACY). When a PO for that item is received in Inventory, stock will auto-sync here.
+              </p>
             </div>
 
             <div className="modal-footer">
