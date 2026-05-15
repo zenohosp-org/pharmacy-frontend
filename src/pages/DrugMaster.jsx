@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, searchDrugs, deleteDrug, importDrugs, importDrugsExcel } from '../api/pharmacyClient';
-import AddEditDrugModal from '../components/AddEditDrugModal';
+import { getDrugs, getInventoryItemTypes, createInventoryItem, updateInventoryItem, deleteInventoryItem } from '../api/pharmacyClient';
 import './DrugMaster.css';
 
 const SCHEDULE_COLORS = {
@@ -8,6 +7,19 @@ const SCHEDULE_COLORS = {
   H: '#FF9800',
   H1: '#F44336',
   X: '#B71C1C'
+};
+
+const EMPTY_FORM = {
+  name: '',
+  genericName: '',
+  hsnCode: '',
+  drugSchedule: '',
+  drugReorderQty: '',
+  unit: '',
+  billingGroup: 'PHARMACY',
+  billable: 'YES',
+  batchRequired: true,
+  expiryRequired: true,
 };
 
 export default function DrugMaster() {
@@ -19,11 +31,14 @@ export default function DrugMaster() {
   const [selectedSchedule, setSelectedSchedule] = useState('');
   const [showModal, setShowModal] = useState(false);
   const [editingDrug, setEditingDrug] = useState(null);
-  const [importError, setImportError] = useState(null);
-  const [importSuccess, setImportSuccess] = useState(null);
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [pharmacyItemTypeId, setPharmacyItemTypeId] = useState(null);
+  const [saving, setSaving] = useState(false);
+  const [formError, setFormError] = useState(null);
 
   useEffect(() => {
     fetchDrugs();
+    resolvePharmacyItemType();
   }, []);
 
   useEffect(() => {
@@ -44,140 +59,91 @@ export default function DrugMaster() {
     }
   };
 
+  const resolvePharmacyItemType = async () => {
+    try {
+      const types = await getInventoryItemTypes();
+      const parsed = Array.isArray(types) ? types : (types.data || []);
+      const pharmacyType = parsed.find(t => t.defaultBillingGroup === 'PHARMACY');
+      if (pharmacyType) setPharmacyItemTypeId(pharmacyType.id);
+    } catch (e) {
+      console.warn('Could not load item types from inventory:', e.message);
+    }
+  };
+
   const applyFilters = () => {
     let filtered = [...drugs];
-
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       filtered = filtered.filter(d =>
-        d.brandName?.toLowerCase().includes(q) ||
+        d.name?.toLowerCase().includes(q) ||
         d.genericName?.toLowerCase().includes(q)
       );
     }
-
     if (selectedSchedule) {
-      filtered = filtered.filter(d => d.schedule === selectedSchedule);
+      filtered = filtered.filter(d => d.drugSchedule === selectedSchedule);
     }
-
     setFilteredDrugs(filtered);
   };
 
-  const handleAddDrug = () => {
+  const openAdd = () => {
     setEditingDrug(null);
+    setFormData(EMPTY_FORM);
+    setFormError(null);
     setShowModal(true);
   };
 
-  const handleEditDrug = (drug) => {
+  const openEdit = (drug) => {
     setEditingDrug(drug);
+    setFormData({
+      name: drug.name || '',
+      genericName: drug.genericName || '',
+      hsnCode: drug.hsnCode || '',
+      drugSchedule: drug.drugSchedule || '',
+      drugReorderQty: drug.drugReorderQty ?? '',
+      unit: drug.unit || '',
+      billingGroup: 'PHARMACY',
+      billable: 'YES',
+      batchRequired: true,
+      expiryRequired: true,
+    });
+    setFormError(null);
     setShowModal(true);
   };
 
-  const handleDeleteDrug = async (drugId) => {
-    if (window.confirm('Are you sure you want to delete this drug?')) {
-      try {
-        await deleteDrug(drugId);
-        await fetchDrugs();
-      } catch (e) {
-        setError('Failed to delete drug');
-        console.error(e);
-      }
-    }
-  };
-
-  const handleModalClose = () => {
-    setShowModal(false);
-    setEditingDrug(null);
-  };
-
-  const handleModalSave = async () => {
-    await fetchDrugs();
-    handleModalClose();
-  };
-
-  const handleFileUpload = async (event) => {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const isExcel = /\.(xlsx|xls)$/.test(file.name);
-    const isCSV = /\.csv$/.test(file.name);
-
+  const handleDelete = async (drugId) => {
+    if (!window.confirm('Delete this drug from inventory?')) return;
     try {
-      setImportError(null);
-      setImportSuccess(null);
-
-      if (isExcel) {
-        await handleExcelUpload(file);
-      } else if (isCSV) {
-        await handleCSVUpload(file);
-      } else {
-        setImportError('Please upload a CSV or Excel file (.xlsx, .xls)');
-      }
-    } catch (e) {
-      setImportError('Failed to process file: ' + e.message);
-      console.error(e);
-    }
-    event.target.value = '';
-  };
-
-  const handleExcelUpload = async (file) => {
-    try {
-      const result = await importDrugsExcel(file);
-      setImportSuccess({
-        imported: result.imported?.length || 0,
-        errors: [...(result.errors || []), ...(result.parseErrors || [])]
-      });
-
-      if (result.imported && result.imported.length > 0) {
-        await fetchDrugs();
-      }
-    } catch (e) {
-      setImportError('Failed to import Excel file: ' + e.message);
-      console.error(e);
-    }
-  };
-
-  const handleCSVUpload = async (file) => {
-    const text = await file.text();
-    const lines = text.split('\n').map(l => l.trim()).filter(l => l);
-
-    if (lines.length < 2) {
-      setImportError('CSV must have at least a header row and one data row');
-      return;
-    }
-
-    const headers = lines[0].split(',').map(h => h.trim());
-    const headerMap = {};
-    headers.forEach((h, i) => {
-      headerMap[h] = i;
-    });
-
-    const drugRequests = [];
-
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim());
-      const drug = {
-        brandName: values[headerMap['brandName']] || '',
-        genericName: values[headerMap['genericName']] || '',
-        hsnCode: values[headerMap['hsnCode']] || '',
-        schedule: values[headerMap['schedule']] || '',
-        category: values[headerMap['category']] || '',
-        form: values[headerMap['form']] || '',
-        strength: values[headerMap['strength']] || '',
-        unit: values[headerMap['unit']] || '',
-        reorderQty: parseInt(values[headerMap['reorderQty']]) || 0,
-        manufacturerId: values[headerMap['manufacturerId']] || null
-      };
-      drugRequests.push(drug);
-    }
-
-    const result = await importDrugs(drugRequests);
-    setImportSuccess({
-      imported: result.imported.length,
-      errors: result.errors
-    });
-
-    if (result.imported.length > 0) {
+      await deleteInventoryItem(drugId);
       await fetchDrugs();
+    } catch (e) {
+      setError('Failed to delete drug');
+      console.error(e);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.name.trim()) { setFormError('Brand name is required'); return; }
+    setSaving(true);
+    setFormError(null);
+    try {
+      const payload = {
+        ...formData,
+        itemTypeId: pharmacyItemTypeId || null,
+        drugReorderQty: formData.drugReorderQty !== '' ? Number(formData.drugReorderQty) : null,
+        isActive: true,
+      };
+      if (editingDrug) {
+        await updateInventoryItem(editingDrug.id, payload);
+      } else {
+        await createInventoryItem(payload);
+      }
+      setShowModal(false);
+      await fetchDrugs();
+    } catch (e) {
+      setFormError('Failed to save drug: ' + (e.response?.data?.message || e.message));
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -185,17 +151,10 @@ export default function DrugMaster() {
     <div className="drug-master-container">
       <div className="mb-6">
         <h1 className="page-title">Drug Master</h1>
-        <p className="page-subtitle">Manage pharmacy drug inventory</p>
+        <p className="page-subtitle">Pharmacy drugs are managed as inventory items. Add or edit from here or from Inventory → Product Master.</p>
       </div>
 
       {error && <div className="alert alert-error">{error}</div>}
-      {importSuccess && (
-        <div className="alert alert-success">
-          Successfully imported {importSuccess.imported} drugs
-          {importSuccess.errors.length > 0 && ` with ${importSuccess.errors.length} errors`}
-        </div>
-      )}
-      {importError && <div className="alert alert-error">{importError}</div>}
 
       <div className="toolbar">
         <input
@@ -205,7 +164,6 @@ export default function DrugMaster() {
           onChange={(e) => setSearchQuery(e.target.value)}
           className="form-input search-input"
         />
-
         <select
           value={selectedSchedule}
           onChange={(e) => setSelectedSchedule(e.target.value)}
@@ -217,20 +175,9 @@ export default function DrugMaster() {
           <option value="H1">H1</option>
           <option value="X">X</option>
         </select>
-
-        <button onClick={handleAddDrug} className="btn btn-primary">
+        <button onClick={openAdd} className="btn btn-primary">
           Add Drug
         </button>
-
-        <label className="file-upload-label">
-          Import Data
-          <input
-            type="file"
-            accept=".csv,.xlsx,.xls"
-            onChange={handleFileUpload}
-            className="file-upload-input"
-          />
-        </label>
       </div>
 
       {loading && <div>Loading...</div>}
@@ -243,43 +190,37 @@ export default function DrugMaster() {
             <table className="table">
               <thead>
                 <tr>
-                  <th>Brand</th>
-                  <th>Generic</th>
+                  <th>Brand Name</th>
+                  <th>Generic Name</th>
                   <th>HSN Code</th>
                   <th>Schedule</th>
-                  <th>Form</th>
-                  <th>Strength</th>
                   <th>Unit</th>
+                  <th>Reorder Qty</th>
                   <th>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {filteredDrugs.length === 0 ? (
                   <tr>
-                    <td colSpan="8" className="text-center">No drugs found</td>
+                    <td colSpan="7" className="text-center">No drugs found</td>
                   </tr>
                 ) : (
                   filteredDrugs.map(drug => (
                     <tr key={drug.id}>
-                      <td className="font-semibold">{drug.brandName}</td>
-                      <td>{drug.genericName}</td>
-                      <td>{drug.hsnCode}</td>
+                      <td className="font-semibold">{drug.name}</td>
+                      <td>{drug.genericName || '—'}</td>
+                      <td>{drug.hsnCode || '—'}</td>
                       <td>
-                        <span className="drug-schedule-badge" style={{ backgroundColor: SCHEDULE_COLORS[drug.schedule] || '#999' }}>
-                          {drug.schedule}
-                        </span>
+                        {drug.drugSchedule
+                          ? <span className="drug-schedule-badge" style={{ backgroundColor: SCHEDULE_COLORS[drug.drugSchedule] || '#999' }}>{drug.drugSchedule}</span>
+                          : '—'}
                       </td>
-                      <td>{drug.form}</td>
-                      <td>{drug.strength}</td>
-                      <td>{drug.unit}</td>
+                      <td>{drug.unit || '—'}</td>
+                      <td>{drug.drugReorderQty ?? '—'}</td>
                       <td className="action-cell">
                         <div className="action-group">
-                          <button onClick={() => handleEditDrug(drug)} className="btn btn-sm btn-primary">
-                            Edit
-                          </button>
-                          <button onClick={() => handleDeleteDrug(drug.id)} className="btn btn-sm btn-danger">
-                            Delete
-                          </button>
+                          <button onClick={() => openEdit(drug)} className="btn btn-sm btn-primary">Edit</button>
+                          <button onClick={() => handleDelete(drug.id)} className="btn btn-sm btn-danger">Delete</button>
                         </div>
                       </td>
                     </tr>
@@ -288,39 +229,60 @@ export default function DrugMaster() {
               </tbody>
             </table>
           </div>
-
-          {importSuccess && importSuccess.errors.length > 0 && (
-            <div className="error-table-wrapper">
-              <h3 className="error-table-title">Import Errors ({importSuccess.errors.length})</h3>
-              <table className="table">
-                <thead>
-                  <tr>
-                    <th>Row</th>
-                    <th>Reason</th>
-                    <th>Details</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {importSuccess.errors.map((err, i) => (
-                    <tr key={i}>
-                      <td>{err.row}</td>
-                      <td>{err.reason}</td>
-                      <td>{err.brand && `Brand: ${err.brand}`}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
         </>
       )}
 
       {showModal && (
-        <AddEditDrugModal
-          drug={editingDrug}
-          onClose={handleModalClose}
-          onSave={handleModalSave}
-        />
+        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
+          <div className="modal" style={{ backgroundColor: 'white', borderRadius: '8px', padding: '24px', width: '100%', maxWidth: '480px', margin: '16px' }}>
+            <h2 style={{ marginBottom: '16px', fontSize: '1.125rem', fontWeight: 600 }}>
+              {editingDrug ? 'Edit Drug' : 'Add Drug'}
+            </h2>
+            {formError && <div className="alert alert-error" style={{ marginBottom: '12px' }}>{formError}</div>}
+            <form onSubmit={handleSubmit}>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Brand Name *</label>
+                  <input type="text" className="form-input" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required placeholder="e.g. Calpol" />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Generic Name</label>
+                  <input type="text" className="form-input" value={formData.genericName} onChange={e => setFormData(p => ({ ...p, genericName: e.target.value }))} placeholder="e.g. Paracetamol" />
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>HSN Code</label>
+                    <input type="text" className="form-input" value={formData.hsnCode} onChange={e => setFormData(p => ({ ...p, hsnCode: e.target.value }))} placeholder="e.g. 30049099" maxLength={10} />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Schedule</label>
+                    <select className="form-select" value={formData.drugSchedule} onChange={e => setFormData(p => ({ ...p, drugSchedule: e.target.value }))}>
+                      <option value="">— Select —</option>
+                      <option value="OTC">OTC</option>
+                      <option value="H">H</option>
+                      <option value="H1">H1</option>
+                      <option value="X">X</option>
+                    </select>
+                  </div>
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Unit</label>
+                    <input type="text" className="form-input" value={formData.unit} onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. Tablet, Vial" />
+                  </div>
+                  <div>
+                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Reorder Qty</label>
+                    <input type="number" className="form-input" value={formData.drugReorderQty} onChange={e => setFormData(p => ({ ...p, drugReorderQty: e.target.value }))} placeholder="e.g. 50" min="0" />
+                  </div>
+                </div>
+              </div>
+              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
+                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>Cancel</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : (editingDrug ? 'Update Drug' : 'Add Drug')}</button>
+              </div>
+            </form>
+          </div>
+        </div>
       )}
     </div>
   );
