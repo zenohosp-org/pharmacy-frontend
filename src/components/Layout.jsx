@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
-    LayoutDashboard, Package, ShoppingCart, History,
+    LayoutDashboard, ShoppingCart, History,
     LogOut, ChevronDown, ChevronRight, Pill, Inbox, FileText,
     Menu as MenuIcon, X as XIcon
 } from 'lucide-react';
@@ -9,12 +9,6 @@ import {
 export default function Layout({ children }) {
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
-    const [mastersOpen, setMastersOpen] = useState(
-        ['/pharmacy/drugs', '/pharmacy/stock'].includes(location.pathname)
-    );
-    const [operationsOpen, setOperationsOpen] = useState(
-        ['/pharmacy/stock/receive'].includes(location.pathname)
-    );
     const [reportsOpen, setReportsOpen] = useState(
         ['/pharmacy/sales-ledger', '/pharmacy/reports'].includes(location.pathname)
     );
@@ -105,42 +99,16 @@ export default function Layout({ children }) {
                             </Link>
                         </li>
 
-                        {/* Masters Section */}
-                        <li className="sidebar-section">
-                            <div className="sidebar-section-title">Masters</div>
-
-                            <div className="sidebar-subsection">
-                                <CollapseToggle
-                                    open={mastersOpen}
-                                    onToggle={() => setMastersOpen(o => !o)}
-                                    icon={Package}
-                                    label="Inventory"
-                                />
-                                {mastersOpen && (
-                                    <div className="sidebar-submenu">
-                                        <NavLink to="/pharmacy/drugs" icon={Pill} label="Drug Master" />
-                                    </div>
-                                )}
-                            </div>
-                        </li>
-
-                        {/* Operations Section */}
-                        <li className="sidebar-section">
-                            <div className="sidebar-section-title">Operations</div>
-
-                            <div className="sidebar-subsection">
-                                <CollapseToggle
-                                    open={operationsOpen}
-                                    onToggle={() => setOperationsOpen(o => !o)}
-                                    icon={ShoppingCart}
-                                    label="Stock Management"
-                                />
-                                {operationsOpen && (
-                                    <div className="sidebar-submenu">
-                                        <NavLink to="/pharmacy/stock/receive" icon={Inbox} label="Receive Stock" />
-                                    </div>
-                                )}
-                            </div>
+                        {/* Stock Receive */}
+                        <li>
+                            <Link
+                                to="/pharmacy/stock/receive"
+                                className={`sidebar-link ${isActive('/pharmacy/stock/receive') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Inbox className="sidebar-icon" size={18} />
+                                Receive Stock
+                            </Link>
                         </li>
 
                         {/* Reports & Ledger Section */}
