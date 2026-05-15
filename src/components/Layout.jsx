@@ -13,7 +13,7 @@ export default function Layout({ children }) {
         ['/pharmacy/drugs', '/pharmacy/stock'].includes(location.pathname)
     );
     const [operationsOpen, setOperationsOpen] = useState(
-        ['/pharmacy/stock/receive'].includes(location.pathname)
+        ['/pharmacy/stock/receive', '/pharmacy/ward-dispensing'].includes(location.pathname)
     );
     const [reportsOpen, setReportsOpen] = useState(
         ['/pharmacy/sales-ledger', '/pharmacy/dispensing', '/pharmacy/reports'].includes(location.pathname)
@@ -126,6 +126,7 @@ export default function Layout({ children }) {
                                 {operationsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/stock/receive" icon={Inbox} label="Receive Stock" />
+                        <NavLink to="/pharmacy/ward-dispensing" icon={Pill} label="Ward Dispensing" />
                                     </div>
                                 )}
                             </div>

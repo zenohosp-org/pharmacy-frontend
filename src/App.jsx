@@ -10,6 +10,7 @@ import StockReceive from './pages/StockReceive';
 import CounterSale from './pages/CounterSale';
 import SalesLedger from './pages/SalesLedger';
 import Dispensing from './pages/Dispensing';
+import WardDispensing from './pages/WardDispensing';
 import Reports from './pages/Reports';
 
 export default function App() {
@@ -26,6 +27,7 @@ export default function App() {
           <Route path="/pharmacy/sales-ledger" element={<ProtectedRoute><Layout><SalesLedger /></Layout></ProtectedRoute>} />
           <Route path="/sales-ledger" element={<ProtectedRoute><Layout><SalesLedger /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/dispensing" element={<ProtectedRoute><Layout><Dispensing /></Layout></ProtectedRoute>} />
+          <Route path="/pharmacy/ward-dispensing" element={<ProtectedRoute><Layout><WardDispensing /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
           <Route path="/" element={<Navigate to="/pharmacy/counter-sale" />} />
           <Route path="*" element={<Navigate to="/pharmacy/counter-sale" />} />

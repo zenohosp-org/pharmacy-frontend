@@ -160,3 +160,19 @@ export const addDrugAlternative = async (drugId, alternativeDrugId, reason) => {
   });
   return response.data;
 };
+
+// HMS integration
+export const searchHmsPatients = async (query) => {
+  const response = await api.get(`/api/pharmacy/hms/patients?q=${encodeURIComponent(query)}`);
+  return response.data;
+};
+
+export const getPatientEncounter = async (patientId) => {
+  const response = await api.get(`/api/pharmacy/hms/patients/${patientId}/encounter`);
+  return response.status === 204 ? null : response.data;
+};
+
+export const createWardIssue = async (payload) => {
+  const response = await api.post('/api/pharmacy/dispensing/ward-issue', payload);
+  return response.data;
+};
