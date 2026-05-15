@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getDrugs, getBatches, createCounterSaleBulk, getDrugAlternatives, searchHmsPatients, getPatientEncounter } from '../api/pharmacyClient';
+import { getDrugs, getBatches, createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClient';
 import { Link } from 'react-router-dom';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
@@ -231,15 +231,6 @@ export default function CounterSale() {
   const [completedSales, setCompletedSales] = useState([]);
   const searchRef = useRef(null);
 
-  // HMS patient linking
-  const [patientQuery, setPatientQuery]     = useState('');
-  const [patientResults, setPatientResults] = useState([]);
-  const [selectedPatient, setSelectedPatient] = useState(null);
-  const [patientEncounter, setPatientEncounter] = useState(null); // null = not loaded, false = none found
-  const [billType, setBillType]             = useState('CASH');
-  const [patientSearchLoading, setPatientSearchLoading] = useState(false);
-  const patientSearchTimer = useRef(null);
-
   useEffect(() => { fetchDrugs(); }, []);
 
   useEffect(() => {
@@ -259,39 +250,6 @@ export default function CounterSale() {
   const fetchDrugs = async () => {
     try { setDrugs(await getDrugs()); }
     catch (e) { console.error(e); }
-  };
-
-  const handlePatientQueryChange = (q) => {
-    setPatientQuery(q);
-    if (!q.trim()) { setPatientResults([]); return; }
-    clearTimeout(patientSearchTimer.current);
-    patientSearchTimer.current = setTimeout(async () => {
-      setPatientSearchLoading(true);
-      try { setPatientResults(await searchHmsPatients(q)); }
-      catch (e) { console.error(e); }
-      finally { setPatientSearchLoading(false); }
-    }, 300);
-  };
-
-  const handlePatientSelect = async (patient) => {
-    setSelectedPatient(patient);
-    setPatientQuery(patient.name + (patient.uhid ? ' · ' + patient.uhid : ''));
-    setPatientResults([]);
-    setPatientEncounter(null);
-    try {
-      const enc = await getPatientEncounter(patient.id);
-      setPatientEncounter(enc || false);
-    } catch (e) {
-      setPatientEncounter(false);
-    }
-  };
-
-  const clearPatient = () => {
-    setSelectedPatient(null);
-    setPatientEncounter(null);
-    setPatientQuery('');
-    setPatientResults([]);
-    setBillType('CASH');
   };
 
   const handleDrugSelect = async (drug) => {
@@ -380,11 +338,8 @@ export default function CounterSale() {
       const payload = {
         storeId: STORE_ID,
         patientPhone: patientPhone || null,
-        paymentMode: billType === 'HMS_CREDIT' ? null : paymentMode,
+        paymentMode,
         doctorName: doctorName || null,
-        billType,
-        patientId: selectedPatient?.id || null,
-        hmsEncounterId: patientEncounter?.id || null,
         items: cart.map(i => ({
           drugId:   i.drugId,
           batchId:  i.batch.id,
@@ -856,97 +811,7 @@ export default function CounterSale() {
                   </div>
                 </div>
 
-                {/* HMS patient link */}
-                <div className="form-group" style={{ marginBottom: 14 }}>
-                  <label className="form-label" style={{ fontSize: 12 }}>Link to HMS patient (optional)</label>
-                  <div style={{ position: 'relative' }}>
-                    <input
-                      type="text"
-                      placeholder="Search by name, UHID or phone…"
-                      value={patientQuery}
-                      onChange={e => handlePatientQueryChange(e.target.value)}
-                      className="form-input"
-                      style={{ fontSize: 12, paddingRight: selectedPatient ? 28 : undefined }}
-                    />
-                    {selectedPatient && (
-                      <button onClick={clearPatient} style={{
-                        position: 'absolute', right: 8, top: '50%', transform: 'translateY(-50%)',
-                        background: 'none', border: 'none', color: '#dc2626', fontSize: 16, cursor: 'pointer'
-                      }}>×</button>
-                    )}
-                    {patientSearchLoading && (
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>Searching…</div>
-                    )}
-                    {patientResults.length > 0 && (
-                      <div style={{
-                        position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                        background: 'var(--color-white)', border: '1px solid var(--color-gray-200)',
-                        borderRadius: '0 0 8px 8px', boxShadow: '0 4px 12px rgba(0,0,0,.1)',
-                        maxHeight: 180, overflowY: 'auto'
-                      }}>
-                        {patientResults.map(p => (
-                          <div key={p.id}
-                            onMouseDown={() => handlePatientSelect(p)}
-                            style={{
-                              padding: '8px 12px', cursor: 'pointer', fontSize: 12,
-                              borderBottom: '1px solid var(--color-gray-100)'
-                            }}
-                            onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
-                            onMouseLeave={e => e.currentTarget.style.background = ''}>
-                            <div style={{ fontWeight: 600 }}>{p.name}</div>
-                            <div style={{ color: 'var(--color-gray-500)', fontSize: 11 }}>
-                              {p.uhid} {p.ward ? '· Ward ' + p.ward : ''}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  {selectedPatient && (
-                    <div style={{
-                      marginTop: 6, padding: '8px 10px', borderRadius: 6, fontSize: 11,
-                      background: patientEncounter ? '#f0fdf4' : '#fafafa',
-                      border: `1px solid ${patientEncounter ? '#86efac' : 'var(--color-gray-200)'}`
-                    }}>
-                      {patientEncounter === null && <span style={{ color: 'var(--color-gray-400)' }}>Checking encounter…</span>}
-                      {patientEncounter === false && <span style={{ color: '#92400e' }}>No active encounter — cash sale only</span>}
-                      {patientEncounter && (
-                        <span style={{ color: '#166534' }}>
-                          Active {patientEncounter.type} · {patientEncounter.ward ?? ''} {patientEncounter.doctorName ? '· Dr ' + patientEncounter.doctorName : ''}
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {/* Bill type toggle — HMS_CREDIT only when patient has active encounter */}
-                <div className="form-group" style={{ marginBottom: 14 }}>
-                  <label className="form-label" style={{ fontSize: 12 }}>Bill type</label>
-                  <div style={{ display: 'flex', gap: 6 }}>
-                    {[
-                      { key: 'CASH', label: '💵 Collect now' },
-                      { key: 'HMS_CREDIT', label: '🏥 Charge to patient', disabled: !patientEncounter }
-                    ].map(({ key, label, disabled }) => (
-                      <button key={key}
-                        disabled={disabled}
-                        onClick={() => !disabled && setBillType(key)}
-                        style={{
-                          flex: 1, padding: '7px 4px', borderRadius: 7, fontSize: 11,
-                          fontWeight: 700, cursor: disabled ? 'not-allowed' : 'pointer',
-                          border: '1px solid',
-                          borderColor: billType === key ? 'var(--color-success, #16a34a)' : 'var(--color-gray-200)',
-                          background: disabled ? 'var(--color-gray-50)' : billType === key ? 'var(--color-success-subtle, #f0fdf4)' : 'var(--color-white)',
-                          color: disabled ? 'var(--color-gray-300)' : billType === key ? 'var(--color-success, #16a34a)' : 'var(--color-gray-600)',
-                          transition: 'all .15s'
-                        }}>
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                {/* payment mode — only for cash bills */}
-                {billType === 'CASH' && (
+                {/* payment mode */}
                 <div className="form-group" style={{ marginBottom: 14 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Payment mode</label>
                   <div style={{ display: 'flex', gap: 6 }}>
@@ -965,7 +830,6 @@ export default function CounterSale() {
                     ))}
                   </div>
                 </div>
-                )}
 
                 {/* doctor name — only when H1/X in cart */}
                 {requiresDoctor && (

@@ -13,10 +13,10 @@ export default function Layout({ children }) {
         ['/pharmacy/drugs', '/pharmacy/stock'].includes(location.pathname)
     );
     const [operationsOpen, setOperationsOpen] = useState(
-        ['/pharmacy/stock/receive', '/pharmacy/ward-dispensing'].includes(location.pathname)
+        ['/pharmacy/stock/receive'].includes(location.pathname)
     );
     const [reportsOpen, setReportsOpen] = useState(
-        ['/pharmacy/sales-ledger', '/pharmacy/dispensing', '/pharmacy/reports'].includes(location.pathname)
+        ['/pharmacy/sales-ledger', '/pharmacy/reports'].includes(location.pathname)
     );
 
     const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -81,6 +81,18 @@ export default function Layout({ children }) {
                             </Link>
                         </li>
 
+                        {/* Dispensing (IPD) — directly below Counter Sale */}
+                        <li>
+                            <Link
+                                to="/pharmacy/dispensing"
+                                className={`sidebar-link ${isActive('/pharmacy/dispensing') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Pill className="sidebar-icon" size={18} />
+                                Dispensing
+                            </Link>
+                        </li>
+
                         {/* Stock Dashboard */}
                         <li>
                             <Link
@@ -126,7 +138,6 @@ export default function Layout({ children }) {
                                 {operationsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/stock/receive" icon={Inbox} label="Receive Stock" />
-                        <NavLink to="/pharmacy/ward-dispensing" icon={Pill} label="Ward Dispensing" />
                                     </div>
                                 )}
                             </div>
@@ -146,7 +157,6 @@ export default function Layout({ children }) {
                                 {reportsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/sales-ledger" icon={History} label="Sales Ledger" />
-                                        <NavLink to="/pharmacy/dispensing" icon={Pill} label="Dispensing" />
                                         <NavLink to="/pharmacy/reports" icon={FileText} label="Reports" />
                                     </div>
                                 )}
