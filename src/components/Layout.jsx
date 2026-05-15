@@ -99,7 +99,6 @@ export default function Layout({ children }) {
                             </Link>
                         </li>
 
-                        {/* Stock Receive */}
                         <li>
                             <Link
                                 to="/pharmacy/stock/receive"
@@ -108,6 +107,17 @@ export default function Layout({ children }) {
                             >
                                 <Inbox className="sidebar-icon" size={18} />
                                 Receive Stock
+                            </Link>
+                        </li>
+
+                        <li>
+                            <Link
+                                to="/pharmacy/drugs"
+                                className={`sidebar-link ${isActive('/pharmacy/drugs') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Pill className="sidebar-icon" size={18} />
+                                Drug Master
                             </Link>
                         </li>
 

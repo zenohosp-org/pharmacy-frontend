@@ -52,7 +52,6 @@ export default function Dispensing() {
 
   const handlePatientQueryChange = (q) => {
     setPatientQuery(q);
-    if (!q.trim()) { setPatientResults([]); return; }
     clearTimeout(patientTimer.current);
     patientTimer.current = setTimeout(async () => {
       setPatientLoading(true);
@@ -60,6 +59,12 @@ export default function Dispensing() {
       catch (e) { console.error(e); }
       finally { setPatientLoading(false); }
     }, 300);
+  };
+
+  const handlePatientFocus = () => {
+    if (selectedPatient) return;
+    setPatientLoading(true);
+    searchHmsPatients(patientQuery).then(setPatientResults).catch(console.error).finally(() => setPatientLoading(false));
   };
 
   const handlePatientSelect = async (p) => {
@@ -85,7 +90,6 @@ export default function Dispensing() {
   const handleDoctorQueryChange = (q) => {
     setDoctorQuery(q);
     setDoctorName(q); // allow free-text fallback if no HMS result picked
-    if (!q.trim()) { setDoctorResults([]); return; }
     clearTimeout(doctorTimer.current);
     doctorTimer.current = setTimeout(async () => {
       setDoctorLoading(true);
@@ -93,6 +97,11 @@ export default function Dispensing() {
       catch (e) { console.error(e); }
       finally { setDoctorLoading(false); }
     }, 300);
+  };
+
+  const handleDoctorFocus = () => {
+    setDoctorLoading(true);
+    searchHmsDoctors(doctorQuery).then(setDoctorResults).catch(console.error).finally(() => setDoctorLoading(false));
   };
 
   const handleDoctorSelect = (doctor) => {
@@ -225,7 +234,6 @@ export default function Dispensing() {
                     onBlur={() => setTimeout(() => setShowDrop(false), 180)}
                     className="form-input"
                     style={{ fontSize: 14 }}
-                    disabled={!encounter}
                   />
                   {!selectedPatient && (
                     <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 6 }}>
@@ -383,6 +391,8 @@ export default function Dispensing() {
                     placeholder="Name, UHID or phone…"
                     value={patientQuery}
                     onChange={e => handlePatientQueryChange(e.target.value)}
+                    onFocus={handlePatientFocus}
+                    onBlur={() => setTimeout(() => setPatientResults([]), 180)}
                     className="form-input"
                     style={{ fontSize: 12, paddingRight: selectedPatient ? 28 : undefined }}
                   />
@@ -453,6 +463,7 @@ export default function Dispensing() {
                     placeholder="Search doctor name…"
                     value={doctorQuery}
                     onChange={e => handleDoctorQueryChange(e.target.value)}
+                    onFocus={handleDoctorFocus}
                     onBlur={() => setTimeout(() => setDoctorResults([]), 180)}
                     className="form-input"
                     style={{ fontSize: 12 }}
