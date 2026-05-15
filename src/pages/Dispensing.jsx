@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, createWardIssue } from '../api/pharmacyClient';
+import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue } from '../api/pharmacyClient';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
@@ -12,6 +12,10 @@ export default function Dispensing() {
   const [showDrop, setShowDrop] = useState(false);
   const [cart, setCart] = useState([]);
   const [doctorName, setDoctorName] = useState('');
+  const [doctorQuery, setDoctorQuery] = useState('');
+  const [doctorResults, setDoctorResults] = useState([]);
+  const [doctorLoading, setDoctorLoading] = useState(false);
+  const doctorTimer = useRef(null);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -76,6 +80,25 @@ export default function Dispensing() {
     setEncounter(null);
     setPatientQuery('');
     setPatientResults([]);
+  };
+
+  const handleDoctorQueryChange = (q) => {
+    setDoctorQuery(q);
+    setDoctorName(q); // allow free-text fallback if no HMS result picked
+    if (!q.trim()) { setDoctorResults([]); return; }
+    clearTimeout(doctorTimer.current);
+    doctorTimer.current = setTimeout(async () => {
+      setDoctorLoading(true);
+      try { setDoctorResults(await searchHmsDoctors(q)); }
+      catch (e) { console.error(e); }
+      finally { setDoctorLoading(false); }
+    }, 300);
+  };
+
+  const handleDoctorSelect = (doctor) => {
+    setDoctorName(doctor.name);
+    setDoctorQuery(doctor.name);
+    setDoctorResults([]);
   };
 
   const handleDrugSelect = async (drug) => {
@@ -410,30 +433,58 @@ export default function Dispensing() {
                   </div>
                 )}
 
-                {/* Doctor name — required for H1/X */}
-                {requiresDoctor && (
-                  <div style={{
+                {/* Doctor search */}
+                <div className="form-group" style={{
+                  marginBottom: 14, position: 'relative',
+                  ...(requiresDoctor ? {
                     padding: '10px 12px', borderRadius: 8,
-                    background: '#fff7ed', border: '1px solid #fed7aa', marginBottom: 14
+                    background: '#fff7ed', border: '1px solid #fed7aa'
+                  } : {})
+                }}>
+                  <label style={{
+                    fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6,
+                    color: requiresDoctor ? '#c2410c' : undefined
                   }}>
-                    <label style={{ fontSize: 12, fontWeight: 700, color: '#c2410c', display: 'block', marginBottom: 6 }}>
-                      ⚠ Doctor name <span style={{ color: '#dc2626' }}>*</span>
-                    </label>
-                    <input type="text" placeholder="Prescribing doctor"
-                      value={doctorName} onChange={e => setDoctorName(e.target.value)}
-                      className="form-input" style={{ fontSize: 12 }} />
+                    {requiresDoctor ? '⚠ Doctor name' : 'Doctor name'}
+                    {requiresDoctor && <span style={{ color: '#dc2626' }}> *</span>}
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Search doctor name…"
+                    value={doctorQuery}
+                    onChange={e => handleDoctorQueryChange(e.target.value)}
+                    onBlur={() => setTimeout(() => setDoctorResults([]), 180)}
+                    className="form-input"
+                    style={{ fontSize: 12 }}
+                  />
+                  {doctorLoading && (
+                    <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>Searching…</div>
+                  )}
+                  {doctorResults.length > 0 && (
+                    <div style={{
+                      position: 'absolute', left: requiresDoctor ? 12 : 0, right: requiresDoctor ? 12 : 0,
+                      zIndex: 100, background: 'var(--color-white)',
+                      border: '1px solid var(--color-gray-200)', borderRadius: 8,
+                      boxShadow: '0 4px 12px rgba(0,0,0,.1)', maxHeight: 180, overflowY: 'auto'
+                    }}>
+                      {doctorResults.map((d, i) => (
+                        <div key={d.id ?? i}
+                          onMouseDown={() => handleDoctorSelect(d)}
+                          style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 12, borderBottom: '1px solid var(--color-gray-100)' }}
+                          onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
+                          onMouseLeave={e => e.currentTarget.style.background = ''}>
+                          <div style={{ fontWeight: 600 }}>{d.name}</div>
+                          {d.specialization && (
+                            <div style={{ color: 'var(--color-gray-500)', fontSize: 11 }}>{d.specialization}</div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {requiresDoctor && (
                     <div style={{ fontSize: 10, color: '#c2410c', marginTop: 4 }}>Required for Schedule H1/X</div>
-                  </div>
-                )}
-
-                {!requiresDoctor && (
-                  <div className="form-group" style={{ marginBottom: 14 }}>
-                    <label className="form-label" style={{ fontSize: 12 }}>Doctor name</label>
-                    <input type="text" placeholder="Prescribing doctor"
-                      value={doctorName} onChange={e => setDoctorName(e.target.value)}
-                      className="form-input" style={{ fontSize: 12 }} />
-                  </div>
-                )}
+                  )}
+                </div>
 
                 <div className="form-group" style={{ marginBottom: 16 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Notes</label>

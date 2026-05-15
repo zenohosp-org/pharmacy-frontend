@@ -167,6 +167,11 @@ export const searchHmsPatients = async (query) => {
   return response.data;
 };
 
+export const searchHmsDoctors = async (query) => {
+  const response = await api.get(`/api/pharmacy/hms/doctors?q=${encodeURIComponent(query)}`);
+  return response.data;
+};
+
 export const getPatientEncounter = async (patientId) => {
   const response = await api.get(`/api/pharmacy/hms/patients/${patientId}/encounter`);
   return response.status === 204 ? null : response.data;
