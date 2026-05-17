@@ -17,8 +17,6 @@ import {
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 
-const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
-
 export default function SalesLedger() {
   const [sales, setSales] = useState([]);
   const [drugs, setDrugs] = useState({});
@@ -32,7 +30,7 @@ export default function SalesLedger() {
     try {
       setLoading(true);
       const [salesData, drugsData] = await Promise.all([
-        getCounterSales(STORE_ID),
+        getCounterSales(),
         getDrugs()
       ]);
       setSales(salesData || []);

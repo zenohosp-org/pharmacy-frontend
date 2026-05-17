@@ -140,7 +140,10 @@ export const createCounterSaleBulk = async (payload) => {
 
 export const getCounterSales = async (storeId) => {
   try {
-    const response = await api.get(`/api/pharmacy/dispensing/counter-sales?storeId=${storeId}`);
+    const url = storeId
+      ? `/api/pharmacy/dispensing/counter-sales?storeId=${storeId}`
+      : '/api/pharmacy/dispensing/counter-sales';
+    const response = await api.get(url);
     return response.data || [];
   } catch {
     console.warn('Counter sales API not available');
