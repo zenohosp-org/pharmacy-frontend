@@ -2,7 +2,6 @@ import { useState, useEffect, useRef } from 'react';
 import { getDrugs, getBatches, createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClient';
 import { Link } from 'react-router-dom';
 
-const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
 // ─── tiny helpers ────────────────────────────────────────────────────────────
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
@@ -336,7 +335,6 @@ export default function CounterSale() {
     setLoading(true); setError(null); setSuccess(null);
     try {
       const payload = {
-        storeId: STORE_ID,
         patientPhone: patientPhone || null,
         paymentMode,
         doctorName: doctorName || null,
