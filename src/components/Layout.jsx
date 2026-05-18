@@ -63,6 +63,18 @@ export default function Layout({ children }) {
 
                 <nav className="sidebar-nav">
                     <ul className="sidebar-menu">
+                        {/* Dashboard */}
+                        <li>
+                            <Link
+                                to="/pharmacy/dashboard"
+                                className={`sidebar-link ${isActive('/pharmacy/dashboard') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <LayoutDashboard className="sidebar-icon" size={18} />
+                                Dashboard
+                            </Link>
+                        </li>
+
                         {/* Counter Sale */}
                         <li>
                             <Link
@@ -75,15 +87,15 @@ export default function Layout({ children }) {
                             </Link>
                         </li>
 
-                        {/* Dispensing (IPD) — directly below Counter Sale */}
+                        {/* Ward Dispensing */}
                         <li>
                             <Link
-                                to="/pharmacy/dispensing"
-                                className={`sidebar-link ${isActive('/pharmacy/dispensing') ? 'active' : ''}`}
+                                to="/pharmacy/ward-dispensing"
+                                className={`sidebar-link ${isActive('/pharmacy/ward-dispensing') ? 'active' : ''}`}
                                 onClick={() => setSidebarOpen(false)}
                             >
                                 <Pill className="sidebar-icon" size={18} />
-                                Dispensing
+                                Ward Dispensing
                             </Link>
                         </li>
 
