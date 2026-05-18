@@ -184,3 +184,8 @@ export const createWardIssue = async (payload) => {
   const response = await api.post('/api/pharmacy/dispensing/ward-issue', payload);
   return response.data;
 };
+
+export const getDefaultStoreId = async () => {
+  const response = await api.get('/api/pharmacy/config/store-id');
+  return response.data?.storeId ?? null;
+};

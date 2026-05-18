@@ -4,6 +4,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
 import SsoCallback from './pages/SsoCallback';
+import Dashboard from './pages/Dashboard';
 import DrugMaster from './pages/DrugMaster';
 import StockDashboard from './pages/StockDashboard';
 import StockReceive from './pages/StockReceive';
@@ -20,6 +21,7 @@ export default function App() {
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/sso/callback" element={<SsoCallback />} />
+          <Route path="/pharmacy/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/drugs" element={<ProtectedRoute><Layout><DrugMaster /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/stock" element={<ProtectedRoute><Layout><StockDashboard /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/stock/receive" element={<ProtectedRoute><Layout><StockReceive /></Layout></ProtectedRoute>} />
@@ -29,8 +31,8 @@ export default function App() {
           <Route path="/pharmacy/dispensing" element={<ProtectedRoute><Layout><Dispensing /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/ward-dispensing" element={<ProtectedRoute><Layout><WardDispensing /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
-          <Route path="/" element={<Navigate to="/pharmacy/counter-sale" />} />
-          <Route path="*" element={<Navigate to="/pharmacy/counter-sale" />} />
+          <Route path="/" element={<Navigate to="/pharmacy/dashboard" />} />
+          <Route path="*" element={<Navigate to="/pharmacy/dashboard" />} />
         </Routes>
       </Router>
     </AuthProvider>

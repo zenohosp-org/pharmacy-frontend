@@ -1,10 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, createWardIssue } from '../api/pharmacyClient';
-
-const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
+import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 
 export default function WardDispensing() {
+  const [storeId, setStoreId] = useState(null);
   const [drugs, setDrugs] = useState([]);
   const [drugSearch, setDrugSearch] = useState('');
   const [filtered, setFiltered] = useState([]);
@@ -30,7 +29,10 @@ export default function WardDispensing() {
   const [pending, setPending] = useState(null);
   const [pendingBatches, setPendingBatches] = useState([]);
 
-  useEffect(() => { getDrugs().then(setDrugs).catch(console.error); }, []);
+  useEffect(() => {
+    getDrugs().then(setDrugs).catch(console.error);
+    getDefaultStoreId().then(setStoreId).catch(console.error);
+  }, []);
 
   useEffect(() => {
     if (drugSearch.trim()) {
@@ -127,7 +129,7 @@ export default function WardDispensing() {
     setLoading(true); setError(null);
     try {
       const payload = {
-        storeId: STORE_ID,
+        storeId: storeId,
         patientId: selectedPatient.id,
         hmsEncounterId: encounter.id,
         doctorName: doctorName || null,
