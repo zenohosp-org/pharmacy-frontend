@@ -185,7 +185,13 @@ export const createWardIssue = async (payload) => {
   return response.data;
 };
 
+const FALLBACK_STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
+
 export const getDefaultStoreId = async () => {
-  const response = await api.get('/api/pharmacy/config/store-id');
-  return response.data?.storeId ?? null;
+  try {
+    const response = await api.get('/api/pharmacy/config/store-id');
+    return response.data?.storeId ?? FALLBACK_STORE_ID;
+  } catch {
+    return FALLBACK_STORE_ID;
+  }
 };

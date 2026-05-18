@@ -3,7 +3,7 @@ import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, createWar
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 
 export default function WardDispensing() {
-  const [storeId, setStoreId] = useState(null);
+  const [storeId, setStoreId] = useState('550e8400-e29b-41d4-a716-446655440001');
   const [drugs, setDrugs] = useState([]);
   const [drugSearch, setDrugSearch] = useState('');
   const [filtered, setFiltered] = useState([]);
