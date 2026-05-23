@@ -1,76 +1,46 @@
-import { useState, useEffect, useRef } from 'react';
-import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue } from '../api/pharmacyClient';
+import { useState, useEffect } from 'react';
+import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
+import SearchDropdown from '../components/SearchDropdown';
 
-const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 const expiryLabel = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
 
 export default function Dispensing() {
+  const [storeId, setStoreId] = useState('550e8400-e29b-41d4-a716-446655440001');
   const [drugs, setDrugs] = useState([]);
   const [drugSearch, setDrugSearch] = useState('');
-  const [filtered, setFiltered] = useState([]);
-  const [showDrop, setShowDrop] = useState(false);
   const [cart, setCart] = useState([]);
   const [doctorName, setDoctorName] = useState('');
   const [doctorQuery, setDoctorQuery] = useState('');
-  const [doctorResults, setDoctorResults] = useState([]);
-  const [doctorLoading, setDoctorLoading] = useState(false);
-  const doctorTimer = useRef(null);
+  const [doctorSelected, setDoctorSelected] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(null);
   const [completedIssues, setCompletedIssues] = useState([]);
-  const drugSearchRef = useRef(null);
 
   // Patient
   const [patientQuery, setPatientQuery] = useState('');
-  const [patientResults, setPatientResults] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
   const [encounter, setEncounter] = useState(null); // null=not loaded, false=none
-  const [patientLoading, setPatientLoading] = useState(false);
-  const patientTimer = useRef(null);
 
   // Pending drug row
   const [pending, setPending] = useState(null);
   const [pendingBatches, setPendingBatches] = useState([]);
 
-  useEffect(() => { getDrugs().then(setDrugs).catch(console.error); }, []);
-
   useEffect(() => {
-    if (drugSearch.trim()) {
-      const q = drugSearch.toLowerCase();
-      setFiltered(drugs.filter(d =>
-        d.brandName?.toLowerCase().includes(q) ||
-        d.genericName?.toLowerCase().includes(q)
-      ));
-      setShowDrop(true);
-    } else {
-      setShowDrop(false);
-    }
-  }, [drugSearch, drugs]);
+    getDrugs().then(setDrugs).catch(console.error);
+    getDefaultStoreId().then(setStoreId).catch(console.error);
+  }, []);
 
-  const handlePatientQueryChange = (q) => {
-    setPatientQuery(q);
-    clearTimeout(patientTimer.current);
-    patientTimer.current = setTimeout(async () => {
-      setPatientLoading(true);
-      try { setPatientResults(await searchHmsPatients(q)); }
-      catch (e) { console.error(e); }
-      finally { setPatientLoading(false); }
-    }, 300);
-  };
-
-  const handlePatientFocus = () => {
-    if (selectedPatient) return;
-    setPatientLoading(true);
-    searchHmsPatients(patientQuery).then(setPatientResults).catch(console.error).finally(() => setPatientLoading(false));
+  const filterDrug = (d, q) => {
+    const t = q.toLowerCase();
+    return d.brandName?.toLowerCase().includes(t) || d.genericName?.toLowerCase().includes(t);
   };
 
   const handlePatientSelect = async (p) => {
     setSelectedPatient(p);
     setPatientQuery(p.name + (p.uhid ? ' · ' + p.uhid : ''));
-    setPatientResults([]);
     setEncounter(null);
     try {
       const enc = await getPatientEncounter(p.id);
@@ -84,35 +54,28 @@ export default function Dispensing() {
     setSelectedPatient(null);
     setEncounter(null);
     setPatientQuery('');
-    setPatientResults([]);
   };
 
-  const handleDoctorQueryChange = (q) => {
+  const handleDoctorChange = (q) => {
     setDoctorQuery(q);
-    setDoctorName(q); // allow free-text fallback if no HMS result picked
-    clearTimeout(doctorTimer.current);
-    doctorTimer.current = setTimeout(async () => {
-      setDoctorLoading(true);
-      try { setDoctorResults(await searchHmsDoctors(q)); }
-      catch (e) { console.error(e); }
-      finally { setDoctorLoading(false); }
-    }, 300);
-  };
-
-  const handleDoctorFocus = () => {
-    setDoctorLoading(true);
-    searchHmsDoctors(doctorQuery).then(setDoctorResults).catch(console.error).finally(() => setDoctorLoading(false));
+    setDoctorName(q); // free-text fallback
+    setDoctorSelected(false);
   };
 
   const handleDoctorSelect = (doctor) => {
     setDoctorName(doctor.name);
     setDoctorQuery(doctor.name);
-    setDoctorResults([]);
+    setDoctorSelected(true);
+  };
+
+  const clearDoctor = () => {
+    setDoctorName('');
+    setDoctorQuery('');
+    setDoctorSelected(false);
   };
 
   const handleDrugSelect = async (drug) => {
     setDrugSearch('');
-    setShowDrop(false);
     try {
       const batches = await getBatches(drug.id);
       const sorted = batches
@@ -139,7 +102,6 @@ export default function Dispensing() {
     setCart(prev => [...prev, { ...pending, id: Math.random() }]);
     setPending(null);
     setPendingBatches([]);
-    drugSearchRef.current?.focus();
   };
 
   const handleRemove = (id) => setCart(prev => prev.filter(i => i.id !== id));
@@ -163,7 +125,7 @@ export default function Dispensing() {
     setLoading(true); setError(null);
     try {
       const payload = {
-        storeId: STORE_ID,
+        storeId: storeId,
         patientId: selectedPatient.id,
         hmsEncounterId: encounter.id,
         doctorName: doctorName || null,
@@ -221,62 +183,41 @@ export default function Dispensing() {
 
           {/* LEFT — drug list */}
           <div>
-            <div style={{ position: 'relative', marginBottom: 16 }}>
-              <div className="card card-elevated">
-                <div className="card-body" style={{ padding: '14px 16px' }}>
-                  <input
-                    ref={drugSearchRef}
-                    type="text"
-                    placeholder="Search drug to add…"
-                    value={drugSearch}
-                    onChange={e => setDrugSearch(e.target.value)}
-                    onFocus={() => drugSearch && setShowDrop(true)}
-                    onBlur={() => setTimeout(() => setShowDrop(false), 180)}
-                    className="form-input"
-                    style={{ fontSize: 14 }}
-                  />
-                  {!selectedPatient && (
-                    <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 6 }}>
-                      Select a patient with an active encounter first
-                    </div>
-                  )}
-                  {selectedPatient && encounter === false && (
-                    <div style={{ fontSize: 11, color: '#dc2626', marginTop: 6 }}>
-                      No active encounter — dispensing not possible
-                    </div>
-                  )}
-                </div>
-              </div>
-              {showDrop && filtered.length > 0 && (
-                <div style={{
-                  position: 'absolute', top: '100%', left: 0, right: 0,
-                  background: 'var(--color-white)', border: '1px solid var(--color-gray-200)',
-                  borderTop: 'none', maxHeight: 260, overflowY: 'auto', zIndex: 1000,
-                  borderRadius: '0 0 10px 10px', boxShadow: '0 8px 24px rgba(0,0,0,.15)'
-                }}>
-                  {filtered.map(drug => (
-                    <div key={drug.id}
-                      onMouseDown={() => handleDrugSelect(drug)}
-                      style={{
-                        padding: '10px 14px', cursor: 'pointer',
-                        borderBottom: '1px solid var(--color-gray-100)',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
-                      onMouseLeave={e => e.currentTarget.style.background = ''}>
+            <div className="card card-elevated" style={{ marginBottom: 16 }}>
+              <div className="card-body" style={{ padding: '14px 16px' }}>
+                <SearchDropdown
+                  value={drugSearch}
+                  onChange={setDrugSearch}
+                  onSelect={handleDrugSelect}
+                  items={drugs}
+                  filterFn={filterDrug}
+                  placeholder="Search drug to add…"
+                  allowClear={false}
+                  disabled={!selectedPatient || encounter === false}
+                  hint={
+                    !selectedPatient
+                      ? 'Select a patient with an active encounter first'
+                      : encounter === false
+                      ? 'No active encounter — dispensing not possible'
+                      : undefined
+                  }
+                  renderItem={(drug) => (
+                    <div className="sd-row-between">
                       <div>
-                        <strong style={{ fontSize: 13 }}>{drug.brandName}</strong>
-                        <span style={{ fontSize: 12, color: 'var(--color-gray-500)', marginLeft: 8 }}>{drug.genericName}</span>
+                        <strong>{drug.brandName}</strong>
+                        <span className="sd-muted">{drug.genericName}</span>
                       </div>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 7px', borderRadius: 4,
-                        background: drug.schedule === 'X' ? '#fef2f2' : drug.schedule === 'H1' ? '#fff7ed' : '#f0fdf4',
-                        color: drug.schedule === 'X' ? '#dc2626' : drug.schedule === 'H1' ? '#c2410c' : '#166534'
-                      }}>{drug.schedule}</span>
+                      <span
+                        className={`sd-badge sd-badge-${
+                          drug.schedule === 'X' ? 'danger' : drug.schedule === 'H1' ? 'warn' : 'ok'
+                        }`}
+                      >
+                        {drug.schedule}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
+                />
+              </div>
             </div>
 
             {/* Pending row */}
@@ -384,44 +325,23 @@ export default function Dispensing() {
               <div className="card-body">
 
                 {/* Patient search */}
-                <div className="form-group" style={{ marginBottom: 14, position: 'relative' }}>
+                <div className="form-group" style={{ marginBottom: 14 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Search patient <span style={{ color: '#dc2626' }}>*</span></label>
-                  <input
-                    type="text"
-                    placeholder="Name, UHID or phone…"
+                  <SearchDropdown
                     value={patientQuery}
-                    onChange={e => handlePatientQueryChange(e.target.value)}
-                    onFocus={handlePatientFocus}
-                    onBlur={() => setTimeout(() => setPatientResults([]), 180)}
-                    className="form-input"
-                    style={{ fontSize: 12, paddingRight: selectedPatient ? 28 : undefined }}
+                    onChange={setPatientQuery}
+                    onSelect={handlePatientSelect}
+                    onClear={clearPatient}
+                    selected={!!selectedPatient}
+                    searchFn={searchHmsPatients}
+                    placeholder="Name, UHID or phone…"
+                    renderItem={(p) => (
+                      <>
+                        <div className="sd-strong">{p.name}</div>
+                        <div className="sd-muted sd-small">{p.uhid}{p.ward ? ' · Ward ' + p.ward : ''}</div>
+                      </>
+                    )}
                   />
-                  {selectedPatient && (
-                    <button onClick={clearPatient} style={{
-                      position: 'absolute', right: 8, top: 38, background: 'none', border: 'none',
-                      color: '#dc2626', fontSize: 16, cursor: 'pointer'
-                    }}>×</button>
-                  )}
-                  {patientLoading && <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>Searching…</div>}
-                  {patientResults.length > 0 && (
-                    <div style={{
-                      position: 'absolute', left: 0, right: 0, zIndex: 100,
-                      background: 'var(--color-white)', border: '1px solid var(--color-gray-200)',
-                      borderRadius: 8, boxShadow: '0 4px 12px rgba(0,0,0,.1)',
-                      maxHeight: 200, overflowY: 'auto'
-                    }}>
-                      {patientResults.map(p => (
-                        <div key={p.id}
-                          onMouseDown={() => handlePatientSelect(p)}
-                          style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 12, borderBottom: '1px solid var(--color-gray-100)' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
-                          onMouseLeave={e => e.currentTarget.style.background = ''}>
-                          <div style={{ fontWeight: 600 }}>{p.name}</div>
-                          <div style={{ color: 'var(--color-gray-500)', fontSize: 11 }}>{p.uhid}{p.ward ? ' · Ward ' + p.ward : ''}</div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
                 </div>
 
                 {/* Encounter status */}
@@ -445,11 +365,8 @@ export default function Dispensing() {
 
                 {/* Doctor search */}
                 <div className="form-group" style={{
-                  marginBottom: 14, position: 'relative',
-                  ...(requiresDoctor ? {
-                    padding: '10px 12px', borderRadius: 8,
-                    background: '#fff7ed', border: '1px solid #fed7aa'
-                  } : {})
+                  marginBottom: 14,
+                  ...(requiresDoctor ? { padding: '10px 12px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa' } : {})
                 }}>
                   <label style={{
                     fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6,
@@ -458,40 +375,22 @@ export default function Dispensing() {
                     {requiresDoctor ? '⚠ Doctor name' : 'Doctor name'}
                     {requiresDoctor && <span style={{ color: '#dc2626' }}> *</span>}
                   </label>
-                  <input
-                    type="text"
-                    placeholder="Search doctor name…"
+                  <SearchDropdown
                     value={doctorQuery}
-                    onChange={e => handleDoctorQueryChange(e.target.value)}
-                    onFocus={handleDoctorFocus}
-                    onBlur={() => setTimeout(() => setDoctorResults([]), 180)}
-                    className="form-input"
-                    style={{ fontSize: 12 }}
+                    onChange={handleDoctorChange}
+                    onSelect={handleDoctorSelect}
+                    onClear={clearDoctor}
+                    selected={doctorSelected}
+                    searchFn={searchHmsDoctors}
+                    placeholder="Search doctor name…"
+                    getKey={(d, i) => d.id ?? `doc-${i}`}
+                    renderItem={(d) => (
+                      <>
+                        <div className="sd-strong">{d.name}</div>
+                        {d.specialization && <div className="sd-muted sd-small">{d.specialization}</div>}
+                      </>
+                    )}
                   />
-                  {doctorLoading && (
-                    <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 4 }}>Searching…</div>
-                  )}
-                  {doctorResults.length > 0 && (
-                    <div style={{
-                      position: 'absolute', left: requiresDoctor ? 12 : 0, right: requiresDoctor ? 12 : 0,
-                      zIndex: 100, background: 'var(--color-white)',
-                      border: '1px solid var(--color-gray-200)', borderRadius: 8,
-                      boxShadow: '0 4px 12px rgba(0,0,0,.1)', maxHeight: 180, overflowY: 'auto'
-                    }}>
-                      {doctorResults.map((d, i) => (
-                        <div key={d.id ?? i}
-                          onMouseDown={() => handleDoctorSelect(d)}
-                          style={{ padding: '8px 12px', cursor: 'pointer', fontSize: 12, borderBottom: '1px solid var(--color-gray-100)' }}
-                          onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
-                          onMouseLeave={e => e.currentTarget.style.background = ''}>
-                          <div style={{ fontWeight: 600 }}>{d.name}</div>
-                          {d.specialization && (
-                            <div style={{ color: 'var(--color-gray-500)', fontSize: 11 }}>{d.specialization}</div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
                   {requiresDoctor && (
                     <div style={{ fontSize: 10, color: '#c2410c', marginTop: 4 }}>Required for Schedule H1/X</div>
                   )}

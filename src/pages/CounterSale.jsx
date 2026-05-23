@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { getDrugs, getBatches, createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClient';
+import SearchDropdown from '../components/SearchDropdown';
 import { Link } from 'react-router-dom';
 
 
@@ -209,8 +210,6 @@ function TableHeader({ isCart }) {
 export default function CounterSale() {
   const [drugs, setDrugs]             = useState([]);
   const [drugSearch, setDrugSearch]   = useState('');
-  const [showDrop, setShowDrop]       = useState(false);
-  const [filtered, setFiltered]       = useState([]);
 
   // pending row (drug selected, not yet added to cart)
   const [pending, setPending]         = useState(null);   // { drugId, drugName, drug, batch, batches, qty, gstRate, discount }
@@ -228,23 +227,15 @@ export default function CounterSale() {
   const [error, setError]             = useState(null);
   const [success, setSuccess]         = useState(null);
   const [completedSales, setCompletedSales] = useState([]);
-  const searchRef = useRef(null);
 
   useEffect(() => { fetchDrugs(); }, []);
 
-  useEffect(() => {
-    if (drugSearch.trim()) {
-      const q = drugSearch.toLowerCase();
-      setFiltered(drugs.filter(d =>
-        d.brandName?.toLowerCase().includes(q) ||
-        d.genericName?.toLowerCase().includes(q) ||
-        d.saltName?.toLowerCase().includes(q)
-      ));
-      setShowDrop(true);
-    } else {
-      setShowDrop(false);
-    }
-  }, [drugSearch, drugs]);
+  const filterDrug = (d, q) => {
+    const t = q.toLowerCase();
+    return d.brandName?.toLowerCase().includes(t) ||
+           d.genericName?.toLowerCase().includes(t) ||
+           d.saltName?.toLowerCase().includes(t);
+  };
 
   const fetchDrugs = async () => {
     try { setDrugs(await getDrugs()); }
@@ -253,7 +244,6 @@ export default function CounterSale() {
 
   const handleDrugSelect = async (drug) => {
     setDrugSearch(`${drug.brandName} (${drug.genericName})`);
-    setShowDrop(false);
     setShowAlt(false);
     setShowDrugInfo(false);
     setAlternatives([]);
@@ -301,7 +291,6 @@ export default function CounterSale() {
     setPending(null);
     setPendingBatches([]);
     setDrugSearch('');
-    searchRef.current?.focus();
   };
 
   const handleCartItemChange = (updated) => {
@@ -443,76 +432,37 @@ export default function CounterSale() {
           <div>
 
             {/* search bar */}
-            <div style={{ position: 'relative', marginBottom: 16 }}>
-              <div className="card card-elevated">
-                <div className="card-body" style={{ padding: '14px 16px' }}>
-                  <input
-                    ref={searchRef}
-                    type="text"
-                    placeholder="🔍  Search drug by brand, generic or salt name…"
-                    value={drugSearch}
-                    onChange={(e) => setDrugSearch(e.target.value)}
-                    onFocus={() => drugSearch && setShowDrop(true)}
-                    onBlur={() => setTimeout(() => setShowDrop(false), 180)}
-                    className="form-input"
-                    style={{ fontSize: 14, paddingLeft: 12 }}
-                  />
-                </div>
-              </div>
-              {showDrop && filtered.length > 0 && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  left: 0,
-                  right: 0,
-                  background: 'var(--color-white)',
-                  border: '1px solid var(--color-gray-200)',
-                  borderTop: 'none',
-                  maxHeight: 280,
-                  overflowY: 'auto',
-                  zIndex: 1000,
-                  borderRadius: '0 0 10px 10px',
-                  boxShadow: '0 8px 24px rgba(0,0,0,.15)',
-                  marginTop: '-1px'
-                }}>
-                  {filtered.map(drug => (
-                    <div key={drug.id}
-                      onMouseDown={() => handleDrugSelect(drug)}
-                      style={{
-                        padding: '10px 14px', cursor: 'pointer',
-                        borderBottom: '1px solid var(--color-gray-100)',
-                        display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                      }}
-                      onMouseEnter={e => e.currentTarget.style.background = 'var(--color-primary-subtle, #f0faf5)'}
-                      onMouseLeave={e => e.currentTarget.style.background = 'var(--color-white)'}
-                    >
+            <div className="card card-elevated" style={{ marginBottom: 16 }}>
+              <div className="card-body" style={{ padding: '14px 16px' }}>
+                <SearchDropdown
+                  value={drugSearch}
+                  onChange={setDrugSearch}
+                  onSelect={handleDrugSelect}
+                  items={drugs}
+                  filterFn={filterDrug}
+                  placeholder="🔍  Search drug by brand, generic or salt name…"
+                  allowClear={false}
+                  renderItem={(drug) => (
+                    <div className="sd-row-between">
                       <div>
-                        <strong style={{ fontSize: 13 }}>{drug.brandName}</strong>
-                        <span style={{ fontSize: 12, color: 'var(--color-gray-500)', marginLeft: 8 }}>
-                          {drug.genericName}
-                        </span>
-                        {drug.saltName && (
-                          <span style={{ fontSize: 11, color: 'var(--color-gray-400)', marginLeft: 6 }}>
-                            · {drug.saltName}
-                          </span>
-                        )}
+                        <strong>{drug.brandName}</strong>
+                        <span className="sd-muted">{drug.genericName}</span>
+                        {drug.saltName && <span className="sd-muted sd-small">· {drug.saltName}</span>}
                       </div>
-                      <span style={{
-                        fontSize: 10, fontWeight: 700, padding: '2px 7px',
-                        borderRadius: 4,
-                        background: drug.schedule === 'X' ? '#fef2f2'
-                          : drug.schedule === 'H1' ? '#fff7ed'
-                          : drug.schedule === 'H'  ? '#fefce8'
-                          : '#f0fdf4',
-                        color: drug.schedule === 'X' ? '#dc2626'
-                          : drug.schedule === 'H1' ? '#c2410c'
-                          : drug.schedule === 'H'  ? '#854d0e'
-                          : '#166534'
-                      }}>{drug.schedule}</span>
+                      <span
+                        className={`sd-badge sd-badge-${
+                          drug.schedule === 'X' ? 'danger'
+                          : drug.schedule === 'H1' ? 'warn'
+                          : drug.schedule === 'H' ? 'warn'
+                          : 'ok'
+                        }`}
+                      >
+                        {drug.schedule}
+                      </span>
                     </div>
-                  ))}
-                </div>
-              )}
+                  )}
+                />
+              </div>
             </div>
 
             {/* drug info + alternatives */}

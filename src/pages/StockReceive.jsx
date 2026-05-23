@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { receiveStock } from '../api/pharmacyClient';
-import { INVENTORY_API_URL } from '../api/pharmacyClient';
+import { receiveStock, INVENTORY_API_URL } from '../api/pharmacyClient';
+import SearchDropdown from '../components/SearchDropdown';
 import axios from 'axios';
 
 const STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
@@ -14,7 +14,6 @@ const RECEIVABLE = ['APPROVED', 'SENT', 'PARTIALLY_RECEIVED'];
 export default function StockReceive() {
   const [pos, setPos] = useState([]);
   const [poSearch, setPoSearch] = useState('');
-  const [showPoDropdown, setShowPoDropdown] = useState(false);
   const [selectedPo, setSelectedPo] = useState(null);
   const [lines, setLines] = useState([]); // one entry per PO item
   const [loading, setLoading] = useState(false);
@@ -30,18 +29,17 @@ export default function StockReceive() {
       .finally(() => setPosLoading(false));
   }, []);
 
-  const filteredPos = pos.filter(po => {
-    if (!RECEIVABLE.includes(po.status)) return false;
-    if (!poSearch.trim()) return true;
-    const q = poSearch.toLowerCase();
-    return po.poNumber?.toLowerCase().includes(q) ||
-           po.vendor?.name?.toLowerCase().includes(q);
-  });
+  const receivablePos = pos.filter(po => RECEIVABLE.includes(po.status));
+
+  const filterPo = (po, q) => {
+    const t = q.toLowerCase();
+    return po.poNumber?.toLowerCase().includes(t) ||
+           po.vendor?.name?.toLowerCase().includes(t);
+  };
 
   const handlePoSelect = (po) => {
     setSelectedPo(po);
     setPoSearch(`${po.poNumber} — ${po.vendor?.name ?? ''}`);
-    setShowPoDropdown(false);
     setError(null);
     setSuccess(null);
     // Build one editable line per PO item
@@ -125,57 +123,32 @@ export default function StockReceive() {
           <div className="card-header"><h3 style={{ margin: 0, fontSize: 15 }}>Purchase Order</h3></div>
           <div className="card-body" style={{ padding: '16px', position: 'relative' }}>
             <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-              <div style={{ flex: 1, position: 'relative' }}>
-                <input
-                  type="text"
-                  placeholder={posLoading ? 'Loading POs…' : 'Search by PO number or vendor…'}
+              <div style={{ flex: 1 }}>
+                <SearchDropdown
                   value={poSearch}
-                  onChange={e => { setPoSearch(e.target.value); setShowPoDropdown(true); }}
-                  onFocus={() => setShowPoDropdown(true)}
-                  onBlur={() => setTimeout(() => setShowPoDropdown(false), 180)}
-                  className="form-input"
-                  style={{ fontSize: 13 }}
+                  onChange={setPoSearch}
+                  onSelect={handlePoSelect}
+                  onClear={clearPo}
+                  selected={!!selectedPo}
+                  items={receivablePos}
+                  filterFn={filterPo}
                   disabled={!!selectedPo}
-                />
-                {showPoDropdown && !selectedPo && (
-                  <div style={{
-                    position: 'absolute', top: '100%', left: 0, right: 0, zIndex: 100,
-                    background: 'var(--color-white)', border: '1px solid var(--color-gray-200)',
-                    borderRadius: '0 0 8px 8px', boxShadow: '0 4px 16px rgba(0,0,0,.12)',
-                    maxHeight: 240, overflowY: 'auto'
-                  }}>
-                    {filteredPos.length === 0 ? (
-                      <div style={{ padding: '12px 14px', fontSize: 12, color: 'var(--color-gray-400)' }}>
-                        {pos.filter(p => RECEIVABLE.includes(p.status)).length === 0
-                          ? 'No approved POs available'
-                          : 'No matching POs'}
-                      </div>
-                    ) : filteredPos.map(po => (
-                      <div key={po.id}
-                        onMouseDown={() => handlePoSelect(po)}
-                        style={{
-                          padding: '10px 14px', cursor: 'pointer',
-                          borderBottom: '1px solid var(--color-gray-100)',
-                          display: 'flex', justifyContent: 'space-between', alignItems: 'center'
-                        }}
-                        onMouseEnter={e => e.currentTarget.style.background = '#f0faf5'}
-                        onMouseLeave={e => e.currentTarget.style.background = ''}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{po.poNumber}</div>
-                          <div style={{ fontSize: 11, color: 'var(--color-gray-500)' }}>
-                            {po.vendor?.name} · {po.items?.length ?? 0} items
-                            {po.expectedDate ? ` · Expected ${po.expectedDate}` : ''}
-                          </div>
+                  placeholder={posLoading ? 'Loading POs…' : 'Search by PO number or vendor…'}
+                  renderItem={(po) => (
+                    <div className="sd-row-between">
+                      <div>
+                        <div className="sd-strong">{po.poNumber}</div>
+                        <div className="sd-muted sd-small">
+                          {po.vendor?.name} · {po.items?.length ?? 0} items
+                          {po.expectedDate ? ` · Expected ${po.expectedDate}` : ''}
                         </div>
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                          background: po.status === 'PARTIALLY_RECEIVED' ? '#fff7ed' : '#f0fdf4',
-                          color: po.status === 'PARTIALLY_RECEIVED' ? '#c2410c' : '#166534'
-                        }}>{STATUS_LABEL[po.status] ?? po.status}</span>
                       </div>
-                    ))}
-                  </div>
-                )}
+                      <span className={`sd-badge sd-badge-${po.status === 'PARTIALLY_RECEIVED' ? 'warn' : 'ok'}`}>
+                        {STATUS_LABEL[po.status] ?? po.status}
+                      </span>
+                    </div>
+                  )}
+                />
               </div>
               {selectedPo && (
                 <button onClick={clearPo} className="btn btn-secondary" style={{ whiteSpace: 'nowrap' }}>
