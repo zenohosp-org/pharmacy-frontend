@@ -88,9 +88,23 @@ export default function SearchDropdown({
     return () => clearTimeout(timerRef.current);
   }, [value, searchFn, debounceMs, selected]);
 
-  const handleFocus = () => {
+  const handleFocus = async () => {
     clearTimeout(blurTimerRef.current);
     if (showAllOnFocus || (value && value.trim())) setOpen(true);
+    // Async mode: if no results yet, fetch immediately so the user sees something on focus
+    if (searchFn && !selected && results.length === 0 && !loading) {
+      clearTimeout(timerRef.current);
+      setLoading(true);
+      try {
+        const data = await searchFn(value || '');
+        setResults(Array.isArray(data) ? data : []);
+      } catch (err) {
+        console.error('SearchDropdown searchFn failed:', err);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    }
   };
 
   const handleBlur = () => {
@@ -131,7 +145,7 @@ export default function SearchDropdown({
           value={value || ''}
           placeholder={placeholder}
           disabled={disabled}
-          onChange={(e) => onChange(e.target.value)}
+          onChange={(e) => { onChange(e.target.value); setOpen(true); }}
           onFocus={handleFocus}
           onBlur={handleBlur}
           onKeyDown={handleKeyDown}

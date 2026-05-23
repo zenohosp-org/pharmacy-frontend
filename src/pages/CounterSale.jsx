@@ -432,8 +432,8 @@ export default function CounterSale() {
           <div>
 
             {/* search bar */}
-            <div className="card card-elevated" style={{ marginBottom: 16 }}>
-              <div className="card-body" style={{ padding: '14px 16px' }}>
+            <div className="card card-elevated" style={{ marginBottom: 16, overflow: 'visible' }}>
+              <div className="card-body" style={{ padding: '14px 16px', overflow: 'visible' }}>
                 <SearchDropdown
                   value={drugSearch}
                   onChange={setDrugSearch}
@@ -606,7 +606,6 @@ export default function CounterSale() {
                               setPending(null);
                               setPendingBatches([]);
                               setDrugSearch('');
-                              setShowDrop(false);
                             }}
                             style={{
                               position: 'absolute',

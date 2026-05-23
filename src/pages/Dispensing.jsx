@@ -45,7 +45,7 @@ export default function Dispensing() {
     try {
       const enc = await getPatientEncounter(p.id);
       setEncounter(enc || false);
-    } catch (e) {
+    } catch {
       setEncounter(false);
     }
   };
@@ -183,8 +183,8 @@ export default function Dispensing() {
 
           {/* LEFT — drug list */}
           <div>
-            <div className="card card-elevated" style={{ marginBottom: 16 }}>
-              <div className="card-body" style={{ padding: '14px 16px' }}>
+            <div className="card card-elevated" style={{ marginBottom: 16, overflow: 'visible' }}>
+              <div className="card-body" style={{ padding: '14px 16px', overflow: 'visible' }}>
                 <SearchDropdown
                   value={drugSearch}
                   onChange={setDrugSearch}
