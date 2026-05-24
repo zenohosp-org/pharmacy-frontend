@@ -180,6 +180,12 @@ export const getPatientEncounter = async (patientId) => {
   return response.status === 204 ? null : response.data;
 };
 
+export const getPatientPrescriptions = async (patientId, admissionId) => {
+  const params = admissionId ? `?admissionId=${encodeURIComponent(admissionId)}` : '';
+  const response = await api.get(`/api/pharmacy/hms/patients/${patientId}/prescriptions${params}`);
+  return response.data || [];
+};
+
 export const createWardIssue = async (payload) => {
   const response = await api.post('/api/pharmacy/dispensing/ward-issue', payload);
   return response.data;
