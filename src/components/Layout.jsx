@@ -3,8 +3,17 @@ import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, ShoppingCart, History,
     LogOut, ChevronDown, ChevronRight, Pill, Inbox, FileText,
-    Menu as MenuIcon, X as XIcon
+    Menu as MenuIcon, X as XIcon,
+    Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight
 } from 'lucide-react';
+
+const EXTERNAL_APPS = [
+    { label: 'HMS',       href: 'https://hms.zenohosp.com',       icon: Activity },
+    { label: 'Finance',   href: 'https://finance.zenohosp.com',   icon: BarChart2 },
+    { label: 'Inventory', href: 'https://inventory.zenohosp.com', icon: Boxes },
+    { label: 'Directory', href: 'https://directory.zenohosp.com', icon: BookOpen },
+    { label: 'Assets',    href: 'https://asset.zenohosp.com',     icon: LayoutGrid },
+];
 
 export default function Layout({ children }) {
     const location = useLocation();
@@ -156,7 +165,26 @@ export default function Layout({ children }) {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <button onClick={() => console.log('logout')} className="btn btn-sm sidebar-footer-signout">
+                    <div className="sidebar-section-title" style={{ marginTop: 0, marginBottom: 6 }}>Other Apps</div>
+                    {EXTERNAL_APPS.map((app) => {
+                        const Icon = app.icon;
+                        return (
+                            <a
+                                key={app.href}
+                                href={app.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="sidebar-link"
+                                style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+                            >
+                                <Icon className="sidebar-icon" size={16} />
+                                <span style={{ flex: 1 }}>{app.label}</span>
+                                <ArrowUpRight size={12} style={{ opacity: 0.45 }} />
+                            </a>
+                        );
+                    })}
+
+                    <button onClick={() => console.log('logout')} className="btn btn-sm sidebar-footer-signout" style={{ marginTop: 12 }}>
                         <LogOut size={14} />
                         Sign Out
                     </button>
