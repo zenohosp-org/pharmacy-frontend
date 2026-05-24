@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
+import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
 import SearchDropdown from '../components/SearchDropdown';
 import PrescriptionQueue from '../components/PrescriptionQueue';
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
@@ -10,6 +10,8 @@ export default function WardDispensing() {
   const [drugSearch, setDrugSearch] = useState('');
   const [cart, setCart] = useState([]);
   const [doctorName, setDoctorName] = useState('');
+  const [doctorQuery, setDoctorQuery] = useState('');
+  const [doctorSelected, setDoctorSelected] = useState(false);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -51,6 +53,24 @@ export default function WardDispensing() {
     setSelectedPatient(null);
     setEncounter(null);
     setPatientQuery('');
+  };
+
+  const handleDoctorChange = (q) => {
+    setDoctorQuery(q);
+    setDoctorName(q); // free-text fallback when no selection is made
+    setDoctorSelected(false);
+  };
+
+  const handleDoctorSelect = (doctor) => {
+    setDoctorName(doctor.name);
+    setDoctorQuery(doctor.name);
+    setDoctorSelected(true);
+  };
+
+  const clearDoctor = () => {
+    setDoctorName('');
+    setDoctorQuery('');
+    setDoctorSelected(false);
   };
 
   const handleDrugSelect = async (drug) => {
@@ -379,9 +399,22 @@ export default function WardDispensing() {
 
                 <div className="form-group" style={{ marginBottom: 14 }}>
                   <label className="form-label" style={{ fontSize: 12 }}>Doctor name</label>
-                  <input type="text" placeholder="Prescribing doctor"
-                    value={doctorName} onChange={e => setDoctorName(e.target.value)}
-                    className="form-input" style={{ fontSize: 12 }} />
+                  <SearchDropdown
+                    value={doctorQuery}
+                    onChange={handleDoctorChange}
+                    onSelect={handleDoctorSelect}
+                    onClear={clearDoctor}
+                    selected={doctorSelected}
+                    searchFn={searchHmsDoctors}
+                    placeholder="Search doctor name…"
+                    getKey={(d, i) => d.id ?? `doc-${i}`}
+                    renderItem={(d) => (
+                      <>
+                        <div className="sd-strong">{d.name}</div>
+                        {d.specialization && <div className="sd-muted sd-small">{d.specialization}</div>}
+                      </>
+                    )}
+                  />
                 </div>
 
                 <div className="form-group" style={{ marginBottom: 16 }}>
