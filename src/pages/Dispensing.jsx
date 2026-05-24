@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
 import SearchDropdown from '../components/SearchDropdown';
+import PrescriptionQueue from '../components/PrescriptionQueue';
 
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 const expiryLabel = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
@@ -90,9 +91,38 @@ export default function Dispensing() {
         qty: 1,
         gstRate: 9,
         discount: 0,
-        schedule: drug.schedule
+        schedule: drug.schedule,
+        prescriptionId: null,
+        prescriptionItemId: null,
       });
     } catch (e) { console.error(e); }
+  };
+
+  const handlePickPrescriptionItem = async (item, prescription) => {
+    if (!item?.drugId) return; // free-text item — pharmacist resolves manually
+    try {
+      const batches = await getBatches(item.drugId);
+      const sorted = batches
+        .filter(b => (b.currentQty ?? 1) > 0)
+        .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+      setPendingBatches(sorted);
+      setPending({
+        id: Math.random(),
+        drugId: item.drugId,
+        drugName: item.drugName,
+        batch: sorted[0] ?? null,
+        qty: item.quantity && item.quantity > 0 ? item.quantity : 1,
+        gstRate: 9,
+        discount: 0,
+        schedule: null,
+        prescriptionId: prescription?.id ?? null,
+        prescriptionItemId: item.id ?? null,
+      });
+      setError(null);
+    } catch (e) {
+      console.error(e);
+      setError('Could not load stock for the selected drug');
+    }
   };
 
   const handleAddToCart = () => {
@@ -124,18 +154,28 @@ export default function Dispensing() {
     if (requiresDoctor && !doctorName.trim()) { setError('Doctor name required for Schedule H1/X drugs'); return; }
     setLoading(true); setError(null);
     try {
+      // Derive request-level prescriptionId only when every linked cart item
+      // shares the same parent prescription. Mixed/empty → null at the root;
+      // each line still carries its own prescriptionItemId.
+      const linkedRxIds = cart.map(i => i.prescriptionId).filter(Boolean);
+      const rootRxId = linkedRxIds.length === cart.length && new Set(linkedRxIds).size === 1
+        ? linkedRxIds[0]
+        : null;
+
       const payload = {
         storeId: storeId,
         patientId: selectedPatient.id,
         hmsEncounterId: encounter.id,
         doctorName: doctorName || null,
         notes: notes || null,
+        prescriptionId: rootRxId,
         items: cart.map(i => ({
           drugId: i.drugId,
           qty: i.qty,
           rate: i.batch.sellingPrice,
           gstRate: i.gstRate,
-          discount: i.discount || 0
+          discount: i.discount || 0,
+          prescriptionItemId: i.prescriptionItemId || null,
         }))
       };
       const bill = await createWardIssue(payload);
@@ -183,6 +223,14 @@ export default function Dispensing() {
 
           {/* LEFT — drug list */}
           <div>
+            {selectedPatient && (
+              <PrescriptionQueue
+                patient={selectedPatient}
+                encounter={encounter || null}
+                onPickItem={handlePickPrescriptionItem}
+              />
+            )}
+
             <div className="card card-elevated" style={{ marginBottom: 16, overflow: 'visible' }}>
               <div className="card-body" style={{ padding: '14px 16px', overflow: 'visible' }}>
                 <SearchDropdown
