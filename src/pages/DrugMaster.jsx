@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, getInventoryItemTypes, createInventoryItem, updateInventoryItem, deleteInventoryItem } from '../api/pharmacyClient';
+import { getDrugs, updateDrug, deleteDrug } from '../api/pharmacyClient';
 import './DrugMaster.css';
 
 const SCHEDULE_COLORS = {
@@ -32,13 +32,11 @@ export default function DrugMaster() {
   const [showModal, setShowModal] = useState(false);
   const [editingDrug, setEditingDrug] = useState(null);
   const [formData, setFormData] = useState(EMPTY_FORM);
-  const [pharmacyItemTypeId, setPharmacyItemTypeId] = useState(null);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
 
   useEffect(() => {
     fetchDrugs();
-    resolvePharmacyItemType();
   }, []);
 
   useEffect(() => {
@@ -59,17 +57,6 @@ export default function DrugMaster() {
     }
   };
 
-  const resolvePharmacyItemType = async () => {
-    try {
-      const types = await getInventoryItemTypes();
-      const parsed = Array.isArray(types) ? types : (types.data || []);
-      const pharmacyType = parsed.find(t => t.defaultBillingGroup === 'PHARMACY');
-      if (pharmacyType) setPharmacyItemTypeId(pharmacyType.id);
-    } catch (e) {
-      console.warn('Could not load item types from inventory:', e.message);
-    }
-  };
-
   const applyFilters = () => {
     let filtered = [...drugs];
     if (searchQuery.trim()) {
@@ -83,13 +70,6 @@ export default function DrugMaster() {
       filtered = filtered.filter(d => d.drugSchedule === selectedSchedule);
     }
     setFilteredDrugs(filtered);
-  };
-
-  const openAdd = () => {
-    setEditingDrug(null);
-    setFormData(EMPTY_FORM);
-    setFormError(null);
-    setShowModal(true);
   };
 
   const openEdit = (drug) => {
@@ -113,7 +93,7 @@ export default function DrugMaster() {
   const handleDelete = async (drugId) => {
     if (!window.confirm('Delete this drug from inventory?')) return;
     try {
-      await deleteInventoryItem(drugId);
+      await deleteDrug(drugId);
       await fetchDrugs();
     } catch (e) {
       setError('Failed to delete drug');
@@ -129,15 +109,9 @@ export default function DrugMaster() {
     try {
       const payload = {
         ...formData,
-        itemTypeId: pharmacyItemTypeId || null,
         drugReorderQty: formData.drugReorderQty !== '' ? Number(formData.drugReorderQty) : null,
-        isActive: true,
       };
-      if (editingDrug) {
-        await updateInventoryItem(editingDrug.id, payload);
-      } else {
-        await createInventoryItem(payload);
-      }
+      await updateDrug(editingDrug.id, payload);
       setShowModal(false);
       await fetchDrugs();
     } catch (e) {
@@ -175,9 +149,6 @@ export default function DrugMaster() {
           <option value="H1">H1</option>
           <option value="X">X</option>
         </select>
-        <button onClick={openAdd} className="btn btn-primary">
-          Add Drug
-        </button>
       </div>
 
       {loading && <div>Loading...</div>}
@@ -236,7 +207,7 @@ export default function DrugMaster() {
         <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
           <div className="modal" style={{ backgroundColor: 'white', borderRadius: '8px', padding: '24px', width: '100%', maxWidth: '480px', margin: '16px' }}>
             <h2 style={{ marginBottom: '16px', fontSize: '1.125rem', fontWeight: 600 }}>
-              {editingDrug ? 'Edit Drug' : 'Add Drug'}
+              Edit Drug
             </h2>
             {formError && <div className="alert alert-error" style={{ marginBottom: '12px' }}>{formError}</div>}
             <form onSubmit={handleSubmit}>
@@ -278,7 +249,7 @@ export default function DrugMaster() {
               </div>
               <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
                 <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : (editingDrug ? 'Update Drug' : 'Add Drug')}</button>
+                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Update Drug'}</button>
               </div>
             </form>
           </div>
