@@ -80,6 +80,17 @@ export default function WardDispensing() {
       const sorted = batches
         .filter(b => (b.currentQty ?? 1) > 0)
         .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+      if (sorted.length === 0) {
+        setError(
+          batches.length === 0
+            ? `${drug.brandName} — no batches available (out of stock)`
+            : `${drug.brandName} — all batches are out of stock`
+        );
+        setPending(null);
+        setPendingBatches([]);
+        return;
+      }
+      setError(null);
       setPendingBatches(sorted);
       setPending({
         id: Math.random(),
@@ -96,13 +107,38 @@ export default function WardDispensing() {
     } catch (e) { console.error(e); }
   };
 
+  const prescriberName = (rx) => {
+    const c = rx?.createdBy;
+    if (!c) return '';
+    const fn = c.firstName?.trim() || '';
+    const ln = c.lastName?.trim() || '';
+    return (fn + ' ' + ln).trim();
+  };
+
   const handlePickPrescriptionItem = async (item, prescription) => {
     if (!item?.drugId) return; // free-text item — pharmacist resolves manually
+    const prescriber = prescriberName(prescription);
+    if (prescriber && !doctorSelected) {
+      setDoctorName(prescriber);
+      setDoctorQuery(prescriber);
+      setDoctorSelected(true);
+    }
     try {
       const batches = await getBatches(item.drugId);
       const sorted = batches
         .filter(b => (b.currentQty ?? 1) > 0)
         .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
+      if (sorted.length === 0) {
+        setError(
+          batches.length === 0
+            ? `${item.drugName} — no batches available (out of stock)`
+            : `${item.drugName} — all batches are out of stock`
+        );
+        setPending(null);
+        setPendingBatches([]);
+        return;
+      }
+      setError(null);
       setPendingBatches(sorted);
       setPending({
         id: Math.random(),

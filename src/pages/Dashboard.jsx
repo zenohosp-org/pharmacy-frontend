@@ -121,7 +121,6 @@ export default function Dashboard() {
           <div className="card card-elevated">
             <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <h3 style={{ margin: 0, fontSize: 14 }}>Low Stock <span style={{ color: '#d97706' }}>({reorderAlerts.length})</span></h3>
-              <Link to="/pharmacy/stock/receive" style={{ fontSize: 12, color: 'var(--color-primary)' }}>Receive Stock →</Link>
             </div>
             <div className="card-body" style={{ padding: '12px 16px', maxHeight: 260, overflowY: 'auto' }}>
               {reorderAlerts.length === 0 ? (
@@ -192,11 +191,10 @@ export default function Dashboard() {
         </div>
 
         {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 12, marginTop: 20 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 20 }}>
           {[
             { label: 'Counter Sale', to: '/pharmacy/counter-sale', icon: '🛒', color: '#16a34a' },
             { label: 'Ward Dispensing', to: '/pharmacy/ward-dispensing', icon: '🏥', color: '#1d4ed8' },
-            { label: 'Receive Stock', to: '/pharmacy/stock/receive', icon: '📥', color: '#d97706' },
             { label: 'Drug Master', to: '/pharmacy/drugs', icon: '💊', color: '#7c3aed' },
           ].map(({ label, to, icon, color }) => (
             <Link key={to} to={to} style={{

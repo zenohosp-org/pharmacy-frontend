@@ -259,8 +259,22 @@ export default function CounterSale() {
         .filter(b => (b.currentQty ?? 1) > 0)
         .sort((a, b) => new Date(a.expiryDate) - new Date(b.expiryDate));
 
-      setPendingBatches(sorted);
       setAlternatives(altData);
+
+      if (sorted.length === 0) {
+        setError(
+          batchData.length === 0
+            ? `${drug.brandName} — no batches available (out of stock)`
+            : `${drug.brandName} — all batches are out of stock`
+        );
+        setPending(null);
+        setPendingBatches([]);
+        setDrugSearch('');
+        return;
+      }
+
+      setError(null);
+      setPendingBatches(sorted);
 
       // ✅ auto-select FEFO batch; rate auto-fills from batch.sellingPrice
       const autoFEFO = sorted[0] ?? null;
