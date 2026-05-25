@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import {
     LayoutDashboard, ShoppingCart, History,
-    LogOut, ChevronDown, ChevronRight, Pill, Inbox, FileText,
+    LogOut, ChevronDown, ChevronRight, Pill, FileText,
     Menu as MenuIcon, X as XIcon,
     Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight
 } from 'lucide-react';
@@ -112,22 +112,11 @@ export default function Layout({ children }) {
                         <li>
                             <Link
                                 to="/pharmacy/stock"
-                                className={`sidebar-link ${isActive('/pharmacy/stock') && !location.pathname.includes('/receive') ? 'active' : ''}`}
+                                className={`sidebar-link ${isActive('/pharmacy/stock') ? 'active' : ''}`}
                                 onClick={() => setSidebarOpen(false)}
                             >
                                 <LayoutDashboard className="sidebar-icon" size={18} />
                                 Stock Dashboard
-                            </Link>
-                        </li>
-
-                        <li>
-                            <Link
-                                to="/pharmacy/stock/receive"
-                                className={`sidebar-link ${isActive('/pharmacy/stock/receive') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <Inbox className="sidebar-icon" size={18} />
-                                Receive Stock
                             </Link>
                         </li>
 

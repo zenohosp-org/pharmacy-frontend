@@ -7,7 +7,6 @@ import SsoCallback from './pages/SsoCallback';
 import Dashboard from './pages/Dashboard';
 import DrugMaster from './pages/DrugMaster';
 import StockDashboard from './pages/StockDashboard';
-import StockReceive from './pages/StockReceive';
 import CounterSale from './pages/CounterSale';
 import SalesLedger from './pages/SalesLedger';
 import Dispensing from './pages/Dispensing';
@@ -24,7 +23,6 @@ export default function App() {
           <Route path="/pharmacy/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/drugs" element={<ProtectedRoute><Layout><DrugMaster /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/stock" element={<ProtectedRoute><Layout><StockDashboard /></Layout></ProtectedRoute>} />
-          <Route path="/pharmacy/stock/receive" element={<ProtectedRoute><Layout><StockReceive /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/counter-sale" element={<ProtectedRoute><Layout><CounterSale /></Layout></ProtectedRoute>} />
           <Route path="/pharmacy/sales-ledger" element={<ProtectedRoute><Layout><SalesLedger /></Layout></ProtectedRoute>} />
           <Route path="/sales-ledger" element={<ProtectedRoute><Layout><SalesLedger /></Layout></ProtectedRoute>} />
