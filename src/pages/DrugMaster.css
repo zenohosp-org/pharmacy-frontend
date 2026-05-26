@@ -86,6 +86,20 @@
   white-space: nowrap;
 }
 
+.import-result {
+  margin-bottom: var(--spacing-4);
+}
+
+.import-errors {
+  margin-top: var(--spacing-2);
+  font-size: var(--fs-sm);
+}
+
+.import-errors ul {
+  margin: var(--spacing-1) 0 0 var(--spacing-4);
+  padding: 0;
+}
+
 .error-table-wrapper {
   margin-top: var(--spacing-6);
 }

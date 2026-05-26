@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { getDrugs, updateDrug, deleteDrug } from '../api/pharmacyClient';
+import { getDrugs, updateDrug, deleteDrug, importDrugsExcel } from '../api/pharmacyClient';
 import './DrugMaster.css';
 
 const SCHEDULE_COLORS = {
@@ -34,6 +34,8 @@ export default function DrugMaster() {
   const [formData, setFormData] = useState(EMPTY_FORM);
   const [saving, setSaving] = useState(false);
   const [formError, setFormError] = useState(null);
+  const [importing, setImporting] = useState(false);
+  const [importResult, setImportResult] = useState(null);
 
   useEffect(() => {
     fetchDrugs();
@@ -88,6 +90,24 @@ export default function DrugMaster() {
     });
     setFormError(null);
     setShowModal(true);
+  };
+
+  const handleExcelImport = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+    setImporting(true);
+    setImportResult(null);
+    setError(null);
+    try {
+      const result = await importDrugsExcel(file);
+      setImportResult(result);
+      await fetchDrugs();
+    } catch (err) {
+      setError('Excel import failed: ' + (err.response?.data?.message || err.message));
+    } finally {
+      setImporting(false);
+    }
   };
 
   const handleDelete = async (drugId) => {
@@ -149,7 +169,36 @@ export default function DrugMaster() {
           <option value="H1">H1</option>
           <option value="X">X</option>
         </select>
+        <label className="file-upload-label">
+          {importing ? 'Importing...' : 'Import Excel'}
+          <input
+            type="file"
+            accept=".xlsx,.xls"
+            className="file-upload-input"
+            onChange={handleExcelImport}
+            disabled={importing}
+          />
+        </label>
+        <a href="/drug_master_template.xlsx" download className="btn btn-secondary btn-sm">
+          Download Template
+        </a>
       </div>
+
+      {importResult && (
+        <div className="alert alert-success import-result">
+          Imported {importResult.imported} drug(s).
+          {importResult.errors?.length > 0 && (
+            <div className="import-errors">
+              <strong>{importResult.errors.length} row(s) skipped:</strong>
+              <ul>
+                {importResult.errors.slice(0, 10).map((err, i) => (
+                  <li key={i}>Row {err.row || '?'}: {err.reason || err.error}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      )}
 
       {loading && <div>Loading...</div>}
       {!loading && !error && (
