@@ -191,6 +191,11 @@ export const createWardIssue = async (payload) => {
   return response.data;
 };
 
+export const getPendingPrescriptions = async () => {
+  const response = await api.get('/api/pharmacy/hms/prescriptions/pending');
+  return response.data || [];
+};
+
 const FALLBACK_STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
 export const getDefaultStoreId = async () => {

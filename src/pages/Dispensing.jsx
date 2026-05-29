@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
 import SearchDropdown from '../components/SearchDropdown';
 import PrescriptionQueue from '../components/PrescriptionQueue';
@@ -28,6 +29,8 @@ export default function Dispensing() {
   // Pending drug row
   const [pending, setPending] = useState(null);
   const [pendingBatches, setPendingBatches] = useState([]);
+
+  const location = useLocation();
 
   useEffect(() => {
     getDrugs().then(setDrugs).catch(console.error);
@@ -124,6 +127,40 @@ export default function Dispensing() {
       setError('Could not load stock for the selected drug');
     }
   };
+
+  // Prefill from the pharmacy queue: when a pharmacist clicks a pending Rx row
+  // on /pharmacy/dispensing/queue we land here with the row in location.state.
+  // Skip the patient-search step, treat the queue's admission as the validated
+  // encounter (queue is IPD-only by construction), and seed the cart-line
+  // staging area with remaining qty = quantity - dispensedQty.
+  useEffect(() => {
+    const prefill = location.state?.prefill;
+    if (!prefill) return;
+    setSelectedPatient({ id: prefill.patientId, name: prefill.patientName });
+    setPatientQuery(prefill.patientName || '');
+    setEncounter({
+      id: prefill.admissionId,
+      type: 'IPD',
+      ward: prefill.wardLabel || prefill.roomLabel || '',
+    });
+    if (prefill.doctorName) {
+      setDoctorName(prefill.doctorName);
+      setDoctorQuery(prefill.doctorName);
+      setDoctorSelected(true);
+    }
+    const remaining = Math.max(1, (prefill.quantity ?? 1) - (prefill.dispensedQty ?? 0));
+    handlePickPrescriptionItem(
+      {
+        id: prefill.prescriptionItemId,
+        drugId: prefill.drugId,
+        drugName: prefill.drugName,
+        quantity: remaining,
+      },
+      { id: prefill.recordId },
+    );
+    window.history.replaceState({}, document.title);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleAddToCart = () => {
     if (!pending?.batch) { setError('No batch available'); return; }
