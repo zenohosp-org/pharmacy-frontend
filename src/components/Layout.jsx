@@ -108,6 +108,18 @@ export default function Layout({ children }) {
                             </Link>
                         </li>
 
+                        {/* Dispensing Queue */}
+                        <li>
+                            <Link
+                                to="/pharmacy/dispensing/queue"
+                                className={`sidebar-link ${isActive('/pharmacy/dispensing/queue') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Pill className="sidebar-icon" size={18} />
+                                Dispensing Queue
+                            </Link>
+                        </li>
+
                         {/* Stock Dashboard */}
                         <li>
                             <Link
