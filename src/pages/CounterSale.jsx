@@ -9,6 +9,34 @@ const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 const expiryLabel = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
 const daysUntil = (d) => Math.ceil((new Date(d) - Date.now()) / 86400000);
 
+// units-per-strip ratio for a line (default 1 = drug has no strip ratio)
+const lineRatio = (item) => item.drug?.unitsPerStrip || 1;
+// batch.sellingPrice is stored per base unit; STRIP mode bills per strip (× ratio).
+const lineRate = (item) => {
+  const sp = item.batch?.sellingPrice ?? 0;
+  return item.uom === 'STRIP' ? sp * lineRatio(item) : sp;
+};
+
+// Strip/Unit toggle — hidden when the drug has no usable ratio (ratio <= 1).
+function UomToggle({ item, onChange }) {
+  const ratio = lineRatio(item);
+  if (ratio <= 1) return null;
+  return (
+    <div style={{ display: 'inline-flex', marginTop: 4, border: '1px solid var(--color-gray-300)', borderRadius: 6, overflow: 'hidden' }}>
+      {['UNIT', 'STRIP'].map(u => (
+        <button key={u} type="button" onClick={() => onChange({ ...item, uom: u })}
+          style={{
+            fontSize: 10, padding: '2px 8px', cursor: 'pointer', border: 'none',
+            background: item.uom === u ? 'var(--color-success, #16a34a)' : 'var(--color-white)',
+            color: item.uom === u ? '#fff' : 'var(--color-gray-600)', fontWeight: 700
+          }}>
+          {u === 'UNIT' ? 'Unit' : `Strip ×${ratio}`}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 function ExpiryBadge({ date }) {
   const days = daysUntil(date);
   const colour = days <= 30 ? '#dc2626' : days <= 90 ? '#d97706' : '#16a34a';
@@ -285,6 +313,7 @@ export default function CounterSale() {
         drug,
         batch: autoFEFO,             // ✅ FEFO auto-selected
         qty: '',
+        uom: 'UNIT',                 // default to loose units; toggle to STRIP per line
         gstRate: 9,
         discount: 0,
         schedule: drug.schedule
@@ -315,7 +344,7 @@ export default function CounterSale() {
 
   // ── totals ────────────────────────────────────────────────────────────────
   const totals = cart.reduce((acc, item) => {
-    const sp      = item.batch?.sellingPrice ?? 0;
+    const sp      = lineRate(item);
     const sub     = (item.qty || 0) * sp;
     const gstAmt  = (sub * (item.gstRate || 0)) / 100;
     const disc    = parseFloat(item.discount) || 0;
@@ -345,7 +374,8 @@ export default function CounterSale() {
           drugId:   i.drugId,
           batchId:  i.batch.id,
           qty:      i.qty,
-          rate:     i.batch.sellingPrice,
+          uom:      i.uom || 'UNIT',
+          rate:     lineRate(i),
           gstRate:  i.gstRate,
           discount: i.discount || 0
         }))
@@ -397,10 +427,11 @@ export default function CounterSale() {
       <thead><tr><th>Drug</th><th>Qty</th><th>Rate</th><th>Amt</th></tr></thead>
       <tbody>
         ${sale.items.map(i => {
-          const sp = i.batch?.sellingPrice ?? i.rate ?? 0;
+          const sp = lineRate(i) || i.rate || 0;
+          const uomLabel = (i.uom || 'UNIT') === 'STRIP' ? 'strip' : 'unit';
           return `<tr>
             <td>${i.drugName}<br/><small style="color:#888">${i.batch?.batchNumber ?? ''}</small></td>
-            <td>${i.qty}</td><td>₹${fmt(sp)}</td>
+            <td>${i.qty} ${uomLabel}</td><td>₹${fmt(sp)}</td>
             <td>₹${fmt(i.qty * sp)}</td>
           </tr>`;
         }).join('')}
@@ -576,7 +607,7 @@ export default function CounterSale() {
 
                 {/* Pending Row */}
                 {pending && (() => {
-                  const sp = pending.batch?.sellingPrice ?? 0;
+                  const sp = lineRate(pending);
                   const sub = (pending.qty || 0) * sp;
                   const gst = (sub * (pending.gstRate || 0)) / 100;
                   const disc = parseFloat(pending.discount) || 0;
@@ -635,6 +666,7 @@ export default function CounterSale() {
                             ×
                           </button>
                         )}
+                        <UomToggle item={pending} onChange={handlePendingChange} />
                       </div>
 
                       {/* GST % */}
@@ -688,7 +720,7 @@ export default function CounterSale() {
 
                 {/* Cart Rows */}
                 {cart.map(item => {
-                  const sp = item.batch?.sellingPrice ?? 0;
+                  const sp = lineRate(item);
                   const sub = (item.qty || 0) * sp;
                   const gst = (sub * (item.gstRate || 0)) / 100;
                   const disc = parseFloat(item.discount) || 0;
@@ -706,7 +738,10 @@ export default function CounterSale() {
                       borderRadius: 8,
                       background: 'var(--color-white)'
                     }}>
-                      <div style={{ fontWeight: 500 }}>{item.drugName}</div>
+                      <div style={{ fontWeight: 500 }}>
+                        {item.drugName}
+                        <UomToggle item={item} onChange={handleCartItemChange} />
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'center', border: '1px solid var(--color-gray-300)', borderRadius: 6, background: 'var(--color-white)' }}>
                         <button onClick={() => handleCartItemChange({ ...item, gstRate: Math.max(0, (item.gstRate || 0) - 0.5) })} style={{ background: 'none', border: 'none', padding: 4, cursor: 'pointer', fontSize: 12 }}>−</button>
                         <input type="number" value={item.gstRate} onChange={(e) => handleCartItemChange({ ...item, gstRate: parseFloat(e.target.value) || 0 })} style={{ width: '100%', textAlign: 'center', border: 'none', padding: 4, fontSize: 12 }} />
