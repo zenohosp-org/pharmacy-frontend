@@ -59,7 +59,7 @@ export default function DispensingQueue() {
     <div className="queue-container">
       <div className="queue-header">
         <div className="queue-header-text">
-          <h1>Ward Dispensing Queue</h1>
+          <h1>Ward Dispensing</h1>
           <p>Pending IPD prescriptions across the hospital. Oldest first.</p>
         </div>
         <div className="queue-controls">

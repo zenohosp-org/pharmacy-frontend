@@ -194,7 +194,7 @@ export default function Dashboard() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 20 }}>
           {[
             { label: 'Counter Sale', to: '/pharmacy/counter-sale', icon: '🛒', color: '#16a34a' },
-            { label: 'Ward Dispensing', to: '/pharmacy/ward-dispensing', icon: '🏥', color: '#1d4ed8' },
+            { label: 'Ward Dispensing', to: '/pharmacy/dispensing/queue', icon: '🏥', color: '#1d4ed8' },
             { label: 'Drug Master', to: '/pharmacy/drugs', icon: '💊', color: '#7c3aed' },
           ].map(({ label, to, icon, color }) => (
             <Link key={to} to={to} style={{

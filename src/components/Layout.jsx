@@ -99,24 +99,12 @@ export default function Layout({ children }) {
                         {/* Ward Dispensing */}
                         <li>
                             <Link
-                                to="/pharmacy/ward-dispensing"
-                                className={`sidebar-link ${isActive('/pharmacy/ward-dispensing') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <Pill className="sidebar-icon" size={18} />
-                                Ward Dispensing
-                            </Link>
-                        </li>
-
-                        {/* Dispensing Queue */}
-                        <li>
-                            <Link
                                 to="/pharmacy/dispensing/queue"
                                 className={`sidebar-link ${isActive('/pharmacy/dispensing/queue') ? 'active' : ''}`}
                                 onClick={() => setSidebarOpen(false)}
                             >
                                 <Pill className="sidebar-icon" size={18} />
-                                Dispensing Queue
+                                Ward Dispensing
                             </Link>
                         </li>
 
