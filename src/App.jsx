@@ -15,7 +15,18 @@ const CounterSale = lazy(() => import('./pages/CounterSale'));
 const SalesLedger = lazy(() => import('./pages/SalesLedger'));
 const Dispensing = lazy(() => import('./pages/Dispensing'));
 const DispensingQueue = lazy(() => import('./pages/DispensingQueue'));
-const Reports = lazy(() => import('./pages/Reports'));
+
+// Reports module
+const ReportsIndex = lazy(() => import('./pages/reports/ReportsIndex'));
+const SalesSummary = lazy(() => import('./pages/reports/SalesSummary'));
+const SalesByDrug = lazy(() => import('./pages/reports/SalesByDrug'));
+const PaymentBreakdown = lazy(() => import('./pages/reports/PaymentBreakdown'));
+const TopSellers = lazy(() => import('./pages/reports/TopSellers'));
+const DrugHistory = lazy(() => import('./pages/reports/DrugHistory'));
+const StockValuation = lazy(() => import('./pages/reports/StockValuation'));
+const NearExpiry = lazy(() => import('./pages/reports/NearExpiry'));
+const StockMovement = lazy(() => import('./pages/reports/StockMovement'));
+const DeadStock = lazy(() => import('./pages/reports/DeadStock'));
 
 // Fullscreen fallback for routes rendered outside the layout shell.
 const fullscreen = (el) => <Suspense fallback={<ContentLoader fullscreen />}>{el}</Suspense>;
@@ -40,7 +51,16 @@ export default function App() {
             <Route path="/sales-ledger" element={<SalesLedger />} />
             <Route path="/pharmacy/dispensing" element={<Dispensing />} />
             <Route path="/pharmacy/dispensing/queue" element={<DispensingQueue />} />
-            <Route path="/pharmacy/reports" element={<Reports />} />
+            <Route path="/pharmacy/reports" element={<ReportsIndex />} />
+            <Route path="/pharmacy/reports/sales-summary" element={<SalesSummary />} />
+            <Route path="/pharmacy/reports/sales-by-drug" element={<SalesByDrug />} />
+            <Route path="/pharmacy/reports/payments" element={<PaymentBreakdown />} />
+            <Route path="/pharmacy/reports/top-sellers" element={<TopSellers />} />
+            <Route path="/pharmacy/reports/drug-history" element={<DrugHistory />} />
+            <Route path="/pharmacy/reports/stock-valuation" element={<StockValuation />} />
+            <Route path="/pharmacy/reports/near-expiry" element={<NearExpiry />} />
+            <Route path="/pharmacy/reports/stock-movement" element={<StockMovement />} />
+            <Route path="/pharmacy/reports/dead-stock" element={<DeadStock />} />
           </Route>
 
           <Route path="/" element={<Navigate to="/pharmacy/dashboard" />} />

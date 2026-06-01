@@ -206,3 +206,59 @@ export const getDefaultStoreId = async () => {
     return FALLBACK_STORE_ID;
   }
 };
+
+// ── Reports ──
+// Date params are ISO strings (yyyy-MM-dd). Helper drops null/empty params.
+const qs = (params) => {
+  const sp = new URLSearchParams();
+  Object.entries(params || {}).forEach(([k, v]) => {
+    if (v !== null && v !== undefined && v !== '') sp.append(k, v);
+  });
+  const s = sp.toString();
+  return s ? `?${s}` : '';
+};
+
+export const getSalesSummary = async (from, to) => {
+  const res = await api.get(`/api/pharmacy/reports/sales/summary${qs({ from, to })}`);
+  return res.data;
+};
+
+export const getSalesByDrug = async (from, to, schedule) => {
+  const res = await api.get(`/api/pharmacy/reports/sales/by-drug${qs({ from, to, schedule })}`);
+  return res.data;
+};
+
+export const getSalesByPayment = async (from, to) => {
+  const res = await api.get(`/api/pharmacy/reports/sales/by-payment${qs({ from, to })}`);
+  return res.data;
+};
+
+export const getTopSellers = async (from, to, limit, by) => {
+  const res = await api.get(`/api/pharmacy/reports/sales/top-sellers${qs({ from, to, limit, by })}`);
+  return res.data;
+};
+
+export const getDrugHistory = async (drugId, from, to) => {
+  const res = await api.get(`/api/pharmacy/reports/drug/${drugId}/history${qs({ from, to })}`);
+  return res.data;
+};
+
+export const getStockValuation = async () => {
+  const res = await api.get('/api/pharmacy/reports/inventory/valuation');
+  return res.data;
+};
+
+export const getNearExpiry = async (days) => {
+  const res = await api.get(`/api/pharmacy/reports/inventory/expiry${qs({ days })}`);
+  return res.data;
+};
+
+export const getStockLedger = async (from, to, drugId) => {
+  const res = await api.get(`/api/pharmacy/reports/inventory/stock-ledger${qs({ from, to, drugId })}`);
+  return res.data;
+};
+
+export const getDeadStock = async (days) => {
+  const res = await api.get(`/api/pharmacy/reports/inventory/dead-stock${qs({ days })}`);
+  return res.data;
+};
