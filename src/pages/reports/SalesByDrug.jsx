@@ -55,6 +55,7 @@ export default function SalesByDrug() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Sales by Drug"
         subtitle="Revenue, cost and margin per drug"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`sales-by-drug_${from}_${to}`} />}

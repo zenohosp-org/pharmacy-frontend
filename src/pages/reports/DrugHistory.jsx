@@ -51,6 +51,7 @@ export default function DrugHistory() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Drug Sales History"
         subtitle="Monthly sales trend for a single drug"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`drug-history_${drugName}`} />}

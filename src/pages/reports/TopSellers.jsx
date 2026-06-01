@@ -46,6 +46,7 @@ export default function TopSellers() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Top Sellers"
         subtitle="Best-selling drugs for the period"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`top-sellers_${from}_${to}`} />}

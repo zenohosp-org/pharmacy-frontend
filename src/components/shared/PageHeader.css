@@ -7,6 +7,21 @@
     flex-wrap: wrap;
 }
 
+.page-head-back {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-medium);
+    color: var(--color-gray-500);
+    margin-bottom: var(--spacing-2);
+    transition: color var(--transition-fast);
+}
+
+.page-head-back:hover {
+    color: var(--color-primary);
+}
+
 .page-head-title {
     font-size: var(--fs-3xl);
     font-weight: var(--fw-bold);

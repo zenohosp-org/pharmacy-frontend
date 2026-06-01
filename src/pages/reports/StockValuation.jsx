@@ -47,6 +47,7 @@ export default function StockValuation() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Stock Valuation"
         subtitle="On-hand stock valued at cost and MRP"
         actions={<ExportButton columns={exportCols} rows={rows} filename="stock-valuation" />}

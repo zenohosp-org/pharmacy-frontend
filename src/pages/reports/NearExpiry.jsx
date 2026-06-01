@@ -50,6 +50,7 @@ export default function NearExpiry() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Near-Expiry"
         subtitle="Batches expiring soon, with value at risk"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`near-expiry_${days}d`} />}

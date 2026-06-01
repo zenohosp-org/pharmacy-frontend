@@ -47,6 +47,7 @@ export default function PaymentBreakdown() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Payment Breakdown"
         subtitle="Sales split by bill type and payment mode"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`payments_${from}_${to}`} />}

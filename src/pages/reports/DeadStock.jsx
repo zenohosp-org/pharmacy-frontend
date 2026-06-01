@@ -45,6 +45,7 @@ export default function DeadStock() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Dead Stock"
         subtitle="Stock on hand with no sale in the chosen window"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`dead-stock_${days}d`} />}

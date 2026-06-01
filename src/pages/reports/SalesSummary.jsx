@@ -56,6 +56,7 @@ export default function SalesSummary() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Daily Sales Summary"
         subtitle="Per-day sales, GST and payment breakdown"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`sales-summary_${from}_${to}`} />}

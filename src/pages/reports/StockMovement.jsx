@@ -50,6 +50,7 @@ export default function StockMovement() {
   return (
     <div>
       <PageHeader
+        backTo="/pharmacy/reports"
         title="Stock Movement Ledger"
         subtitle="Every IN / OUT / RETURN / write-off movement"
         actions={<ExportButton columns={exportCols} rows={rows} filename={`stock-movement_${from}_${to}`} />}
