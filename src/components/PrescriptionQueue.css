@@ -1,0 +1,146 @@
+/* PrescriptionQueue — reused inside Dispensing. */
+
+.pq-card {
+    margin-bottom: var(--spacing-4);
+}
+
+.pq-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--color-gray-100);
+    background: var(--color-gray-50);
+}
+
+.pq-head-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.pq-title {
+    font-size: var(--fs-sm);
+}
+
+.pq-count {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+}
+
+.pq-body {
+    padding: 8px 14px;
+}
+
+.pq-empty {
+    padding: 16px 4px;
+    font-size: var(--fs-sm);
+    color: var(--color-gray-500);
+}
+
+.pq-rx {
+    border: 1px solid var(--color-gray-200);
+    border-radius: var(--radius-md);
+    margin-bottom: 10px;
+    overflow: hidden;
+}
+
+.pq-rx-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-100);
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.pq-rx-head-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.pq-rx-creator {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+}
+
+.pq-rx-role {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+}
+
+.pq-rx-meta {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+}
+
+.pq-mrn {
+    font-family: var(--font-mono);
+    margin-right: 8px;
+}
+
+/* status badges */
+.pq-badge {
+    font-size: 10px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    padding: 2px 8px;
+    border-radius: 999px;
+    border: 1px solid;
+}
+
+.pq-badge--ipd { background: #eff6ff; color: #1e40af; border-color: #bfdbfe; }
+.pq-badge--opd { background: #f0fdf4; color: #166534; border-color: #86efac; }
+.pq-badge--legacy { background: #fff7ed; color: #c2410c; border-color: #fed7aa; }
+.pq-badge--nodrug { background: #fef2f2; color: #b91c1c; border-color: #fecaca; }
+
+/* compact table */
+.pq-table {
+    width: 100%;
+    margin: 0;
+}
+
+.pq-table th,
+.pq-table td {
+    padding: 8px 10px;
+    font-size: var(--fs-sm);
+    vertical-align: top;
+}
+
+.pq-drug-name {
+    font-weight: var(--fw-semibold);
+}
+
+.pq-drug-sub {
+    font-size: 10px;
+    color: var(--color-gray-500);
+}
+
+.pq-nodrug-wrap {
+    margin-top: 4px;
+}
+
+.pq-notes {
+    padding: 8px 12px;
+    font-size: var(--fs-sm);
+    color: var(--color-gray-700);
+    background: var(--color-gray-50);
+    white-space: pre-wrap;
+}
+
+.pq-notes--bordered {
+    border-top: 1px solid var(--color-gray-100);
+}
+
+.pq-notes-label {
+    font-size: 10px;
+    font-weight: var(--fw-bold);
+    text-transform: uppercase;
+    color: var(--color-gray-500);
+    margin-right: 6px;
+}

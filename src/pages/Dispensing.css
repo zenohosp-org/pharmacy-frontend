@@ -1,25 +1,202 @@
-/* Dispensing Page Styles */
+/* Dispensing — page-specific layout. Cards/buttons/alerts/table are reused primitives. */
 
-.dispensing-container {
-  padding: var(--spacing-8);
-  background-color: var(--color-bg-page);
+.dp-grid {
+    display: grid;
+    grid-template-columns: 1fr 300px;
+    gap: var(--spacing-5);
 }
 
-.page-title {
-  font-size: var(--fs-3xl);
-  font-weight: var(--fw-bold);
-  color: var(--color-gray-900);
-  margin-bottom: var(--spacing-2);
+@media (max-width: 900px) {
+    .dp-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
-.page-subtitle {
-  font-size: var(--fs-base);
-  color: var(--color-gray-600);
-  margin-bottom: var(--spacing-6);
+.dp-search-card {
+    overflow: visible;
+    margin-bottom: var(--spacing-4);
 }
 
-@media (max-width: 768px) {
-  .dispensing-container {
-    padding: var(--spacing-4);
-  }
+.dp-search-card .card-body {
+    overflow: visible;
+}
+
+.dp-field-label {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+    margin-bottom: 4px;
+}
+
+.dp-input {
+    font-size: var(--fs-sm);
+    padding: 6px 8px;
+}
+
+/* pending row */
+.dp-pending {
+    display: grid;
+    grid-template-columns: 2fr 1fr 1fr 1fr auto;
+    gap: 10px;
+    align-items: end;
+}
+
+.dp-pending-name {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-sm);
+}
+
+.dp-pending-batch {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-400);
+    margin-top: 2px;
+}
+
+.dp-rate {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-base);
+    padding-top: 6px;
+}
+
+.dp-pending-actions {
+    display: flex;
+    gap: 6px;
+    padding-bottom: 2px;
+}
+
+/* cart */
+.dp-cart-row {
+    display: grid;
+    grid-template-columns: 2fr 0.7fr 0.6fr 0.8fr auto;
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-gray-100);
+}
+
+.dp-cart-name {
+    font-weight: var(--fw-semibold);
+    font-size: var(--fs-sm);
+}
+
+.dp-cart-meta {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-400);
+}
+
+.dp-sched-warn {
+    margin-left: 6px;
+    color: var(--color-error-dark);
+    font-weight: var(--fw-bold);
+}
+
+.dp-cart-gst {
+    text-align: right;
+    font-size: var(--fs-sm);
+    color: var(--color-gray-500);
+}
+
+.dp-cart-amount {
+    text-align: right;
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-sm);
+}
+
+.dp-remove {
+    background: var(--color-error-subtle);
+    color: var(--color-error-dark);
+    border: 1px solid var(--color-error-light);
+    border-radius: var(--radius-md);
+    padding: 4px 8px;
+    cursor: pointer;
+}
+
+.dp-input-center {
+    text-align: center;
+}
+
+/* right column */
+.dp-summary {
+    position: sticky;
+    top: 20px;
+}
+
+.dp-field {
+    margin-bottom: 14px;
+}
+
+/* encounter status */
+.dp-enc {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+    font-size: var(--fs-sm);
+    border: 1px solid var(--color-gray-200);
+    background: var(--color-gray-50);
+}
+
+.dp-enc--active {
+    background: var(--color-success-subtle);
+    border-color: var(--color-success-light);
+}
+
+.dp-enc--none {
+    background: var(--color-error-subtle);
+    border-color: var(--color-error-light);
+}
+
+.dp-enc-checking-text { color: var(--color-gray-400); }
+.dp-enc-none-text { color: var(--color-error-dark); font-weight: var(--fw-semibold); }
+.dp-enc-title { font-weight: var(--fw-bold); color: var(--color-success-dark); }
+.dp-enc-line { color: var(--color-success-dark); }
+
+/* doctor box (when Schedule H1/X present) */
+.dp-doctor {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    background: var(--color-warning-subtle);
+    border: 1px solid var(--color-warning-light);
+}
+
+.dp-doctor-label {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-bold);
+    display: block;
+    margin-bottom: 6px;
+    color: var(--color-warning-dark);
+}
+
+.dp-doctor-hint {
+    font-size: 10px;
+    color: var(--color-warning-dark);
+    margin-top: 4px;
+}
+
+.dp-total {
+    padding: 10px 12px;
+    border-radius: var(--radius-md);
+    margin-bottom: 14px;
+    background: var(--color-gray-50);
+    border: 1px solid var(--color-gray-200);
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--fs-lg);
+    font-weight: 800;
+}
+
+.dp-total-value {
+    color: var(--color-success-dark);
+}
+
+.dp-note {
+    font-size: var(--fs-xs);
+    color: var(--color-info-dark);
+    background: var(--color-info-subtle);
+    border: 1px solid var(--color-info-light);
+    border-radius: var(--radius-md);
+    padding: 8px 10px;
+    margin-bottom: 12px;
+}
+
+.dp-recent {
+    margin-top: var(--spacing-6);
 }

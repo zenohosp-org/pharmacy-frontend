@@ -3,6 +3,12 @@ import { useLocation } from 'react-router-dom';
 import { getDrugs, getBatches, searchHmsPatients, getPatientEncounter, searchHmsDoctors, createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
 import SearchDropdown from '../components/SearchDropdown';
 import PrescriptionQueue from '../components/PrescriptionQueue';
+import PageHeader from '../components/shared/PageHeader';
+import Alert from '../components/shared/Alert';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Table from '../components/ui/Table';
+import './Dispensing.css';
 
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 const expiryLabel = (d) => new Date(d).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' });
@@ -128,11 +134,7 @@ export default function Dispensing() {
     }
   };
 
-  // Prefill from the pharmacy queue: when a pharmacist clicks a pending Rx row
-  // on /pharmacy/dispensing/queue we land here with the row in location.state.
-  // Skip the patient-search step, treat the queue's admission as the validated
-  // encounter (queue is IPD-only by construction), and seed the cart-line
-  // staging area with remaining qty = quantity - dispensedQty.
+  // Prefill from the pharmacy queue (see /pharmacy/dispensing/queue).
   useEffect(() => {
     const prefill = location.state?.prefill;
     if (!prefill) return;
@@ -191,9 +193,6 @@ export default function Dispensing() {
     if (requiresDoctor && !doctorName.trim()) { setError('Doctor name required for Schedule H1/X drugs'); return; }
     setLoading(true); setError(null);
     try {
-      // Derive request-level prescriptionId only when every linked cart item
-      // shares the same parent prescription. Mixed/empty → null at the root;
-      // each line still carries its own prescriptionItemId.
       const linkedRxIds = cart.map(i => i.prescriptionId).filter(Boolean);
       const rootRxId = linkedRxIds.length === cart.length && new Set(linkedRxIds).size === 1
         ? linkedRxIds[0]
@@ -213,7 +212,7 @@ export default function Dispensing() {
           gstRate: i.gstRate,
           discount: i.discount || 0,
           prescriptionItemId: i.prescriptionItemId || null,
-        }))
+        })),
       };
       const bill = await createWardIssue(payload);
       setCompletedIssues(prev => [{
@@ -221,7 +220,7 @@ export default function Dispensing() {
         patientName: selectedPatient.name,
         ward: encounter.ward,
         total: totals.total,
-        timestamp: new Date().toLocaleString()
+        timestamp: new Date().toLocaleString(),
       }, ...prev]);
       setSuccess(`Dispensed — Bill ${bill.billNumber} charged to patient's encounter`);
       setCart([]); setDoctorName(''); setNotes('');
@@ -233,313 +232,252 @@ export default function Dispensing() {
     }
   };
 
-  const inputStyle = {
-    width: '100%', fontSize: 12, padding: '6px 8px',
-    border: '1px solid var(--color-gray-200)',
-    borderRadius: 6, background: 'var(--color-white)', outline: 'none'
-  };
+  const recentColumns = [
+    { header: 'Bill #', render: (_, s) => <strong>{s.billNumber}</strong> },
+    { header: 'Patient', accessor: 'patientName' },
+    { header: 'Ward', render: (_, s) => s.ward ?? '—' },
+    { header: 'Amount', align: 'right', render: (_, s) => `₹${fmt(s.total)}` },
+    { header: 'Time', render: (_, s) => <span className="text-muted text-sm">{s.timestamp}</span> },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-page)' }}>
+    <div>
+      <PageHeader
+        title="IPD Dispensing"
+        subtitle="Dispense drugs to an admitted patient — charged to their HMS encounter bill"
+      />
 
-      <div style={{
-        padding: '16px 24px', background: 'var(--color-white)',
-        borderBottom: '1px solid var(--color-gray-200)'
-      }}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>IPD Dispensing</h1>
-        <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: 13 }}>
-          Dispense drugs to an admitted patient — charged to their HMS encounter bill
-        </p>
-      </div>
+      {error && <Alert tone="error" className="section-gap">{error}</Alert>}
+      {success && <Alert tone="success" className="section-gap">{success}</Alert>}
 
-      <div style={{ padding: '20px 24px' }}>
-        {error && <div className="alert alert-error" style={{ marginBottom: 16 }}>{error}</div>}
-        {success && <div className="alert alert-success" style={{ marginBottom: 16 }}>{success}</div>}
+      <div className="dp-grid">
+        {/* LEFT — drug list */}
+        <div>
+          {selectedPatient && (
+            <PrescriptionQueue
+              patient={selectedPatient}
+              encounter={encounter || null}
+              onPickItem={handlePickPrescriptionItem}
+            />
+          )}
 
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: 20 }}>
+          <Card className="dp-search-card">
+            <SearchDropdown
+              value={drugSearch}
+              onChange={setDrugSearch}
+              onSelect={handleDrugSelect}
+              items={drugs}
+              filterFn={filterDrug}
+              placeholder="Search drug to add…"
+              allowClear={false}
+              disabled={!selectedPatient || encounter === false}
+              hint={
+                !selectedPatient
+                  ? 'Select a patient with an active encounter first'
+                  : encounter === false
+                  ? 'No active encounter — dispensing not possible'
+                  : undefined
+              }
+              renderItem={(drug) => (
+                <div className="sd-row-between">
+                  <div>
+                    <strong>{drug.brandName}</strong>
+                    <span className="sd-muted">{drug.genericName}</span>
+                  </div>
+                  <span className={`sd-badge sd-badge-${drug.schedule === 'X' ? 'danger' : drug.schedule === 'H1' ? 'warn' : 'ok'}`}>
+                    {drug.schedule}
+                  </span>
+                </div>
+              )}
+            />
+          </Card>
 
-          {/* LEFT — drug list */}
-          <div>
-            {selectedPatient && (
-              <PrescriptionQueue
-                patient={selectedPatient}
-                encounter={encounter || null}
-                onPickItem={handlePickPrescriptionItem}
-              />
-            )}
-
-            <div className="card card-elevated" style={{ marginBottom: 16, overflow: 'visible' }}>
-              <div className="card-body" style={{ padding: '14px 16px', overflow: 'visible' }}>
-                <SearchDropdown
-                  value={drugSearch}
-                  onChange={setDrugSearch}
-                  onSelect={handleDrugSelect}
-                  items={drugs}
-                  filterFn={filterDrug}
-                  placeholder="Search drug to add…"
-                  allowClear={false}
-                  disabled={!selectedPatient || encounter === false}
-                  hint={
-                    !selectedPatient
-                      ? 'Select a patient with an active encounter first'
-                      : encounter === false
-                      ? 'No active encounter — dispensing not possible'
-                      : undefined
-                  }
-                  renderItem={(drug) => (
-                    <div className="sd-row-between">
-                      <div>
-                        <strong>{drug.brandName}</strong>
-                        <span className="sd-muted">{drug.genericName}</span>
-                      </div>
-                      <span
-                        className={`sd-badge sd-badge-${
-                          drug.schedule === 'X' ? 'danger' : drug.schedule === 'H1' ? 'warn' : 'ok'
-                        }`}
-                      >
-                        {drug.schedule}
-                      </span>
+          {/* Pending row */}
+          {pending && (
+            <Card className="section-gap">
+              <div className="dp-pending">
+                <div>
+                  <div className="dp-field-label">Drug</div>
+                  <div className="dp-pending-name">{pending.drugName}</div>
+                  {pendingBatches.length > 1 && (
+                    <select
+                      value={pending.batch?.id ?? ''}
+                      onChange={e => {
+                        const b = pendingBatches.find(x => x.id === e.target.value);
+                        setPending(p => ({ ...p, batch: b }));
+                      }}
+                      className="form-select dp-input"
+                    >
+                      {pendingBatches.map(b => (
+                        <option key={b.id} value={b.id}>
+                          {b.batchNumber} · {expiryLabel(b.expiryDate)} · ₹{fmt(b.sellingPrice)}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  {pendingBatches.length === 1 && (
+                    <div className="dp-pending-batch">
+                      Batch {pending.batch?.batchNumber} · exp {expiryLabel(pending.batch?.expiryDate)}
                     </div>
+                  )}
+                </div>
+                <div>
+                  <div className="dp-field-label">Qty</div>
+                  <input type="number" min="1" value={pending.qty} autoFocus
+                    onChange={e => setPending(p => ({ ...p, qty: parseFloat(e.target.value) || 0 }))}
+                    className="form-input dp-input" />
+                </div>
+                <div>
+                  <div className="dp-field-label">GST %</div>
+                  <input type="number" min="0" value={pending.gstRate}
+                    onChange={e => setPending(p => ({ ...p, gstRate: parseFloat(e.target.value) || 0 }))}
+                    className="form-input dp-input" />
+                </div>
+                <div>
+                  <div className="dp-field-label">Rate</div>
+                  <div className="dp-rate">₹{fmt(pending.batch?.sellingPrice)}</div>
+                </div>
+                <div className="dp-pending-actions">
+                  <Button variant="success" size="sm" onClick={handleAddToCart} disabled={!pending.batch || !(pending.qty > 0)}>Add</Button>
+                  <Button variant="secondary" size="sm" onClick={() => { setPending(null); setPendingBatches([]); }}>×</Button>
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {/* Cart */}
+          {cart.length > 0 && (
+            <Card padded={false} title={`Items (${cart.length})`}>
+              <div className="card-body">
+                {cart.map(item => {
+                  const sp = item.batch?.sellingPrice ?? 0;
+                  const sub = item.qty * sp;
+                  const gst = (sub * item.gstRate) / 100;
+                  const disc = item.discount || 0;
+                  return (
+                    <div key={item.id} className="dp-cart-row">
+                      <div>
+                        <div className="dp-cart-name">{item.drugName}</div>
+                        <div className="dp-cart-meta">
+                          {item.batch?.batchNumber} · ₹{fmt(sp)}/unit
+                          {(item.schedule === 'H1' || item.schedule === 'X') && (
+                            <span className="dp-sched-warn">⚠ {item.schedule}</span>
+                          )}
+                        </div>
+                      </div>
+                      <input type="number" min="1" value={item.qty}
+                        onChange={e => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: parseFloat(e.target.value) || 0 } : i))}
+                        className="form-input dp-input dp-input-center" />
+                      <div className="dp-cart-gst">{item.gstRate}% GST</div>
+                      <div className="dp-cart-amount">₹{fmt(sub + gst - disc)}</div>
+                      <button onClick={() => handleRemove(item.id)} className="dp-remove">×</button>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
+        </div>
+
+        {/* RIGHT — patient + submit */}
+        <div>
+          <Card padded={false} title="Patient" className="dp-summary">
+            <div className="card-body">
+              {/* Patient search */}
+              <div className="form-group dp-field">
+                <label className="form-label">Search patient <span className="text-error">*</span></label>
+                <SearchDropdown
+                  value={patientQuery}
+                  onChange={setPatientQuery}
+                  onSelect={handlePatientSelect}
+                  onClear={clearPatient}
+                  selected={!!selectedPatient}
+                  searchFn={searchHmsPatients}
+                  placeholder="Name, UHID or phone…"
+                  renderItem={(p) => (
+                    <>
+                      <div className="sd-strong">{p.name}</div>
+                      <div className="sd-muted sd-small">{p.uhid}{p.ward ? ' · Ward ' + p.ward : ''}</div>
+                    </>
                   )}
                 />
               </div>
-            </div>
 
-            {/* Pending row */}
-            {pending && (
-              <div className="card card-elevated" style={{ marginBottom: 12 }}>
-                <div className="card-body" style={{ padding: 14 }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr 1fr 1fr auto', gap: 10, alignItems: 'end' }}>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginBottom: 4 }}>Drug</div>
-                      <div style={{ fontWeight: 600, fontSize: 13 }}>{pending.drugName}</div>
-                      {pendingBatches.length > 1 && (
-                        <select value={pending.batch?.id ?? ''} onChange={e => {
-                          const b = pendingBatches.find(x => x.id === e.target.value);
-                          setPending(p => ({ ...p, batch: b }));
-                        }} style={{ ...inputStyle, marginTop: 4 }}>
-                          {pendingBatches.map(b => (
-                            <option key={b.id} value={b.id}>
-                              {b.batchNumber} · {expiryLabel(b.expiryDate)} · ₹{fmt(b.sellingPrice)}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                      {pendingBatches.length === 1 && (
-                        <div style={{ fontSize: 11, color: 'var(--color-gray-400)', marginTop: 2 }}>
-                          Batch {pending.batch?.batchNumber} · exp {expiryLabel(pending.batch?.expiryDate)}
-                        </div>
-                      )}
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginBottom: 4 }}>Qty</div>
-                      <input type="number" min="1" value={pending.qty} autoFocus
-                        onChange={e => setPending(p => ({ ...p, qty: parseFloat(e.target.value) || 0 }))}
-                        style={inputStyle} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginBottom: 4 }}>GST %</div>
-                      <input type="number" min="0" value={pending.gstRate}
-                        onChange={e => setPending(p => ({ ...p, gstRate: parseFloat(e.target.value) || 0 }))}
-                        style={inputStyle} />
-                    </div>
-                    <div>
-                      <div style={{ fontSize: 11, color: 'var(--color-gray-500)', marginBottom: 4 }}>Rate</div>
-                      <div style={{ fontWeight: 600, fontSize: 14, paddingTop: 6 }}>₹{fmt(pending.batch?.sellingPrice)}</div>
-                    </div>
-                    <div style={{ display: 'flex', gap: 6, paddingBottom: 2 }}>
-                      <button onClick={handleAddToCart}
-                        disabled={!pending.batch || !(pending.qty > 0)}
-                        className="btn btn-success" style={{ padding: '6px 14px' }}>Add</button>
-                      <button onClick={() => { setPending(null); setPendingBatches([]); }}
-                        className="btn btn-secondary" style={{ padding: '6px 10px' }}>×</button>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Cart */}
-            {cart.length > 0 && (
-              <div className="card card-elevated">
-                <div className="card-header" style={{ padding: '10px 16px' }}>
-                  <span style={{ fontSize: 12, fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-gray-500)' }}>
-                    Items ({cart.length})
-                  </span>
-                </div>
-                <div className="card-body" style={{ padding: '8px 16px' }}>
-                  {cart.map(item => {
-                    const sp = item.batch?.sellingPrice ?? 0;
-                    const sub = item.qty * sp;
-                    const gst = (sub * item.gstRate) / 100;
-                    const disc = item.discount || 0;
-                    return (
-                      <div key={item.id} style={{
-                        display: 'grid', gridTemplateColumns: '2fr 0.7fr 0.6fr 0.8fr auto',
-                        gap: 12, alignItems: 'center', padding: '10px 0',
-                        borderBottom: '1px solid var(--color-gray-100)'
-                      }}>
-                        <div>
-                          <div style={{ fontWeight: 600, fontSize: 13 }}>{item.drugName}</div>
-                          <div style={{ fontSize: 11, color: 'var(--color-gray-400)' }}>
-                            {item.batch?.batchNumber} · ₹{fmt(sp)}/unit
-                            {(item.schedule === 'H1' || item.schedule === 'X') && (
-                              <span style={{ marginLeft: 6, color: '#dc2626', fontWeight: 700 }}>⚠ {item.schedule}</span>
-                            )}
-                          </div>
-                        </div>
-                        <input type="number" min="1" value={item.qty}
-                          onChange={e => setCart(prev => prev.map(i => i.id === item.id ? { ...i, qty: parseFloat(e.target.value) || 0 } : i))}
-                          style={{ ...inputStyle, textAlign: 'center' }} />
-                        <div style={{ textAlign: 'right', fontSize: 12, color: 'var(--color-gray-500)' }}>{item.gstRate}% GST</div>
-                        <div style={{ textAlign: 'right', fontWeight: 700, fontSize: 13 }}>₹{fmt(sub + gst - disc)}</div>
-                        <button onClick={() => handleRemove(item.id)}
-                          style={{ background: '#fee2e2', color: '#dc2626', border: '1px solid #fca5a5', borderRadius: 6, padding: '4px 8px', cursor: 'pointer' }}>×</button>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* RIGHT — patient + submit */}
-          <div>
-            <div className="card card-elevated" style={{ position: 'sticky', top: 20 }}>
-              <div className="card-header"><h3 style={{ margin: 0, fontSize: 15 }}>Patient</h3></div>
-              <div className="card-body">
-
-                {/* Patient search */}
-                <div className="form-group" style={{ marginBottom: 14 }}>
-                  <label className="form-label" style={{ fontSize: 12 }}>Search patient <span style={{ color: '#dc2626' }}>*</span></label>
-                  <SearchDropdown
-                    value={patientQuery}
-                    onChange={setPatientQuery}
-                    onSelect={handlePatientSelect}
-                    onClear={clearPatient}
-                    selected={!!selectedPatient}
-                    searchFn={searchHmsPatients}
-                    placeholder="Name, UHID or phone…"
-                    renderItem={(p) => (
-                      <>
-                        <div className="sd-strong">{p.name}</div>
-                        <div className="sd-muted sd-small">{p.uhid}{p.ward ? ' · Ward ' + p.ward : ''}</div>
-                      </>
-                    )}
-                  />
-                </div>
-
-                {/* Encounter status */}
-                {selectedPatient && (
-                  <div style={{
-                    padding: '10px 12px', borderRadius: 8, marginBottom: 14, fontSize: 12,
-                    background: encounter ? '#f0fdf4' : encounter === false ? '#fef2f2' : '#fafafa',
-                    border: `1px solid ${encounter ? '#86efac' : encounter === false ? '#fca5a5' : 'var(--color-gray-200)'}`
-                  }}>
-                    {encounter === null && <span style={{ color: 'var(--color-gray-400)' }}>Checking encounter…</span>}
-                    {encounter === false && <span style={{ color: '#dc2626', fontWeight: 600 }}>No active encounter</span>}
-                    {encounter && (
-                      <>
-                        <div style={{ fontWeight: 700, color: '#166534' }}>Active {encounter.type}</div>
-                        {encounter.ward && <div style={{ color: '#166534' }}>Ward: {encounter.ward}</div>}
-                        {encounter.doctorName && <div style={{ color: '#166534' }}>Dr {encounter.doctorName}</div>}
-                      </>
-                    )}
-                  </div>
-                )}
-
-                {/* Doctor search */}
-                <div className="form-group" style={{
-                  marginBottom: 14,
-                  ...(requiresDoctor ? { padding: '10px 12px', borderRadius: 8, background: '#fff7ed', border: '1px solid #fed7aa' } : {})
-                }}>
-                  <label style={{
-                    fontSize: 12, fontWeight: 700, display: 'block', marginBottom: 6,
-                    color: requiresDoctor ? '#c2410c' : undefined
-                  }}>
-                    {requiresDoctor ? '⚠ Doctor name' : 'Doctor name'}
-                    {requiresDoctor && <span style={{ color: '#dc2626' }}> *</span>}
-                  </label>
-                  <SearchDropdown
-                    value={doctorQuery}
-                    onChange={handleDoctorChange}
-                    onSelect={handleDoctorSelect}
-                    onClear={clearDoctor}
-                    selected={doctorSelected}
-                    searchFn={searchHmsDoctors}
-                    placeholder="Search doctor name…"
-                    getKey={(d, i) => d.id ?? `doc-${i}`}
-                    renderItem={(d) => (
-                      <>
-                        <div className="sd-strong">{d.name}</div>
-                        {d.specialization && <div className="sd-muted sd-small">{d.specialization}</div>}
-                      </>
-                    )}
-                  />
-                  {requiresDoctor && (
-                    <div style={{ fontSize: 10, color: '#c2410c', marginTop: 4 }}>Required for Schedule H1/X</div>
+              {/* Encounter status */}
+              {selectedPatient && (
+                <div className={`dp-enc ${encounter ? 'dp-enc--active' : encounter === false ? 'dp-enc--none' : ''}`}>
+                  {encounter === null && <span className="dp-enc-checking-text">Checking encounter…</span>}
+                  {encounter === false && <span className="dp-enc-none-text">No active encounter</span>}
+                  {encounter && (
+                    <>
+                      <div className="dp-enc-title">Active {encounter.type}</div>
+                      {encounter.ward && <div className="dp-enc-line">Ward: {encounter.ward}</div>}
+                      {encounter.doctorName && <div className="dp-enc-line">Dr {encounter.doctorName}</div>}
+                    </>
                   )}
                 </div>
+              )}
 
-                <div className="form-group" style={{ marginBottom: 16 }}>
-                  <label className="form-label" style={{ fontSize: 12 }}>Notes</label>
-                  <input type="text" placeholder="Reason / ward notes"
-                    value={notes} onChange={e => setNotes(e.target.value)}
-                    className="form-input" style={{ fontSize: 12 }} />
-                </div>
-
-                {cart.length > 0 && (
-                  <div style={{
-                    padding: '10px 12px', borderRadius: 8, marginBottom: 14,
-                    background: 'var(--color-gray-50)', border: '1px solid var(--color-gray-200)',
-                    display: 'flex', justifyContent: 'space-between', fontSize: 15, fontWeight: 800
-                  }}>
-                    <span>Total</span>
-                    <span style={{ color: 'var(--color-success, #16a34a)' }}>₹{fmt(totals.total)}</span>
-                  </div>
-                )}
-
-                <div style={{
-                  fontSize: 11, color: '#1e40af', background: '#eff6ff',
-                  border: '1px solid #bfdbfe', borderRadius: 6, padding: '8px 10px', marginBottom: 12
-                }}>
-                  Charged to patient's HMS bill — no cash collected at counter.
-                </div>
-
-                <button onClick={handleSubmit}
-                  disabled={loading || !cart.length || !encounter || (requiresDoctor && !doctorName.trim())}
-                  className="btn btn-success btn-block"
-                  style={{ fontSize: 13, fontWeight: 700 }}>
-                  {loading ? 'Processing…' : `Dispense  ₹${fmt(totals.total)}`}
-                </button>
+              {/* Doctor search */}
+              <div className={`form-group dp-field ${requiresDoctor ? 'dp-doctor' : ''}`}>
+                <label className={requiresDoctor ? 'dp-doctor-label' : 'form-label'}>
+                  {requiresDoctor ? '⚠ Doctor name' : 'Doctor name'}
+                  {requiresDoctor && <span className="text-error"> *</span>}
+                </label>
+                <SearchDropdown
+                  value={doctorQuery}
+                  onChange={handleDoctorChange}
+                  onSelect={handleDoctorSelect}
+                  onClear={clearDoctor}
+                  selected={doctorSelected}
+                  searchFn={searchHmsDoctors}
+                  placeholder="Search doctor name…"
+                  getKey={(d, i) => d.id ?? `doc-${i}`}
+                  renderItem={(d) => (
+                    <>
+                      <div className="sd-strong">{d.name}</div>
+                      {d.specialization && <div className="sd-muted sd-small">{d.specialization}</div>}
+                    </>
+                  )}
+                />
+                {requiresDoctor && <div className="dp-doctor-hint">Required for Schedule H1/X</div>}
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Recent issues */}
-        {completedIssues.length > 0 && (
-          <div style={{ marginTop: 24 }} className="card card-elevated">
-            <div className="card-header"><h3 style={{ margin: 0, fontSize: 15 }}>Recent dispensing ({completedIssues.length})</h3></div>
-            <table className="table">
-              <thead>
-                <tr><th>Bill #</th><th>Patient</th><th>Ward</th><th style={{ textAlign: 'right' }}>Amount</th><th>Time</th></tr>
-              </thead>
-              <tbody>
-                {completedIssues.map((s, i) => (
-                  <tr key={i}>
-                    <td><strong>{s.billNumber}</strong></td>
-                    <td>{s.patientName}</td>
-                    <td>{s.ward ?? '—'}</td>
-                    <td style={{ textAlign: 'right' }}>₹{fmt(s.total)}</td>
-                    <td style={{ fontSize: 12, color: 'var(--color-gray-500)' }}>{s.timestamp}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+              <div className="form-group dp-field">
+                <label className="form-label">Notes</label>
+                <input type="text" placeholder="Reason / ward notes" value={notes} onChange={e => setNotes(e.target.value)} className="form-input" />
+              </div>
+
+              {cart.length > 0 && (
+                <div className="dp-total">
+                  <span>Total</span>
+                  <span className="dp-total-value">₹{fmt(totals.total)}</span>
+                </div>
+              )}
+
+              <div className="dp-note">
+                Charged to patient's HMS bill — no cash collected at counter.
+              </div>
+
+              <Button
+                variant="success"
+                block
+                onClick={handleSubmit}
+                disabled={loading || !cart.length || !encounter || (requiresDoctor && !doctorName.trim())}
+              >
+                {loading ? 'Processing…' : `Dispense  ₹${fmt(totals.total)}`}
+              </Button>
+            </div>
+          </Card>
+        </div>
       </div>
+
+      {/* Recent issues */}
+      {completedIssues.length > 0 && (
+        <Card padded={false} title={`Recent dispensing (${completedIssues.length})`} className="dp-recent">
+          <Table columns={recentColumns} data={completedIssues} getRowKey={(s, i) => i} />
+        </Card>
+      )}
     </div>
   );
 }
