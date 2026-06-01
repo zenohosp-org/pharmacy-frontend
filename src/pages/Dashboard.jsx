@@ -1,33 +1,22 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { getCounterSales, getExpiryAlerts, getReorderAlerts, getDrugs } from '../api/pharmacyClient';
+import PageHeader from '../components/shared/PageHeader';
+import ContentLoader from '../components/shared/ContentLoader';
+import AlertRow from '../components/shared/AlertRow';
+import StatusBadge from '../components/shared/StatusBadge';
+import StatCard from '../components/ui/StatCard';
+import Card from '../components/ui/Card';
+import Table from '../components/ui/Table';
+import './Dashboard.css';
 
 const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 
-function StatCard({ label, value, sub, color = '#16a34a', icon }) {
-  return (
-    <div className="card card-elevated" style={{ padding: '20px 24px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-        <div>
-          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '.05em', marginBottom: 8 }}>{label}</div>
-          <div style={{ fontSize: 28, fontWeight: 800, color }}>{value}</div>
-          {sub && <div style={{ fontSize: 12, color: 'var(--color-gray-400)', marginTop: 4 }}>{sub}</div>}
-        </div>
-        <span style={{ fontSize: 28 }}>{icon}</span>
-      </div>
-    </div>
-  );
-}
-
-function AlertRow({ children, type = 'error' }) {
-  const bg = type === 'error' ? '#fef2f2' : '#fffbeb';
-  const border = type === 'error' ? '#fca5a5' : '#fde68a';
-  return (
-    <div style={{ padding: '8px 12px', borderRadius: 6, background: bg, border: `1px solid ${border}`, marginBottom: 6, fontSize: 13 }}>
-      {children}
-    </div>
-  );
-}
+const QUICK_ACTIONS = [
+  { label: 'Counter Sale', to: '/pharmacy/counter-sale', icon: '🛒', tone: 'success' },
+  { label: 'Ward Dispensing', to: '/pharmacy/dispensing/queue', icon: '🏥', tone: 'primary' },
+  { label: 'Drug Master', to: '/pharmacy/drugs', icon: '💊', tone: 'info' },
+];
 
 export default function Dashboard() {
   const [sales, setSales] = useState([]);
@@ -41,7 +30,7 @@ export default function Dashboard() {
       getCounterSales(),
       getExpiryAlerts(30),
       getReorderAlerts(),
-      getDrugs()
+      getDrugs(),
     ]).then(([salesData, expiry, reorder, drugs]) => {
       setSales(salesData || []);
       setExpiryAlerts(expiry || []);
@@ -53,6 +42,8 @@ export default function Dashboard() {
       .finally(() => setLoading(false));
   }, []);
 
+  if (loading) return <ContentLoader label="Loading dashboard…" />;
+
   const today = new Date().toDateString();
   const todaySales = sales.filter(s => new Date(s.dispensedAt).toDateString() === today);
   const todayRevenue = todaySales.reduce((sum, s) => {
@@ -61,157 +52,106 @@ export default function Dashboard() {
   }, 0);
 
   const drugName = (id) => drugMap[id] || id?.slice(0, 8);
+  const lineTotal = (s) => {
+    const sub = parseFloat(s.qty || 0) * parseFloat(s.rate || 0);
+    return sub + sub * (parseFloat(s.gstRate || 0) / 100) - (parseFloat(s.discount) || 0);
+  };
 
-  if (loading) {
-    return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'var(--color-bg-page)' }}>
-        <p style={{ color: 'var(--color-gray-400)' }}>Loading dashboard…</p>
-      </div>
-    );
-  }
+  const txColumns = [
+    { header: 'Drug', render: (_, s) => <span className="font-semibold">{drugName(s.drugId)}</span> },
+    { header: 'Qty', align: 'right', render: (_, s) => parseFloat(s.qty || 0) },
+    { header: 'Rate', align: 'right', render: (_, s) => `₹${fmt(s.rate)}` },
+    { header: 'Total', align: 'right', render: (_, s) => <span className="font-semibold">₹{fmt(lineTotal(s))}</span> },
+    { header: 'Type', render: (_, s) => <StatusBadge tone={s.billType === 'HMS_CREDIT' ? 'primary' : 'success'}>{s.billType || 'CASH'}</StatusBadge> },
+    { header: 'Time', render: (_, s) => <span className="text-muted text-sm">{new Date(s.dispensedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</span> },
+  ];
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--color-bg-page)' }}>
-      {/* Header */}
-      <div style={{ padding: '16px 24px', background: 'var(--color-white)', borderBottom: '1px solid var(--color-gray-200)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <div>
-          <h1 style={{ margin: 0, fontSize: 20 }}>Dashboard</h1>
-          <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: 13 }}>{new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        </div>
-        <Link to="/pharmacy/counter-sale" className="btn btn-success" style={{ fontWeight: 700 }}>+ New Sale</Link>
+    <div>
+      <PageHeader
+        title="Dashboard"
+        subtitle={new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+        actions={<Link to="/pharmacy/counter-sale" className="btn btn-success">+ New Sale</Link>}
+      />
+
+      {/* Stat cards */}
+      <div className="grid grid-4 section-gap">
+        <StatCard label="Today's Bills" value={todaySales.length} sub="dispensing records" icon="🧾" />
+        <StatCard label="Today's Revenue" value={`₹${fmt(todayRevenue)}`} sub="incl. GST" icon="💰" tone="success" />
+        <StatCard label="Expiry Alerts" value={expiryAlerts.length} sub="batches expiring ≤30 days" icon="⚠️" tone={expiryAlerts.length > 0 ? 'danger' : 'success'} />
+        <StatCard label="Low Stock" value={reorderAlerts.length} sub="drugs below reorder level" icon="📦" tone={reorderAlerts.length > 0 ? 'warning' : 'success'} />
       </div>
 
-      <div style={{ padding: '20px 24px' }}>
-
-        {/* Stat cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 24 }}>
-          <StatCard label="Today's Bills" value={todaySales.length} sub="dispensing records" icon="🧾" color="var(--color-gray-900)" />
-          <StatCard label="Today's Revenue" value={`₹${fmt(todayRevenue)}`} sub="incl. GST" icon="💰" color="#16a34a" />
-          <StatCard label="Expiry Alerts" value={expiryAlerts.length} sub="batches expiring ≤30 days" icon="⚠️" color={expiryAlerts.length > 0 ? '#dc2626' : '#16a34a'} />
-          <StatCard label="Low Stock" value={reorderAlerts.length} sub="drugs below reorder level" icon="📦" color={reorderAlerts.length > 0 ? '#d97706' : '#16a34a'} />
-        </div>
-
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20, marginBottom: 24 }}>
-
-          {/* Expiry Alerts */}
-          <div className="card card-elevated">
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: 14 }}>Expiry Alerts <span style={{ color: '#dc2626' }}>({expiryAlerts.length})</span></h3>
-              <Link to="/pharmacy/stock" style={{ fontSize: 12, color: 'var(--color-primary)' }}>View Stock →</Link>
-            </div>
-            <div className="card-body" style={{ padding: '12px 16px', maxHeight: 260, overflowY: 'auto' }}>
-              {expiryAlerts.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#16a34a', margin: 0 }}>No batches expiring within 30 days</p>
-              ) : expiryAlerts.slice(0, 10).map(b => (
-                <AlertRow key={b.id} type="error">
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 600 }}>{drugName(b.drugId)}</span>
-                    <span style={{ color: '#dc2626', fontWeight: 700 }}>
-                      Exp {new Date(b.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
-                    </span>
-                  </div>
-                  <div style={{ fontSize: 11, color: '#9ca3af', marginTop: 2 }}>Batch {b.batchNumber}</div>
-                </AlertRow>
-              ))}
-              {expiryAlerts.length > 10 && <p style={{ fontSize: 12, color: 'var(--color-gray-400)', margin: '8px 0 0' }}>+{expiryAlerts.length - 10} more</p>}
-            </div>
+      {/* Alert panels */}
+      <div className="grid grid-2 grid-gap-lg section-gap">
+        <Card
+          padded={false}
+          title={<>Expiry Alerts <span className="dash-count-error">({expiryAlerts.length})</span></>}
+          action={<Link to="/pharmacy/stock" className="dash-link">View Stock →</Link>}
+        >
+          <div className="dash-alert-list">
+            {expiryAlerts.length === 0 ? (
+              <p className="dash-empty">No batches expiring within 30 days</p>
+            ) : expiryAlerts.slice(0, 10).map(b => (
+              <AlertRow key={b.id} tone="error">
+                <div className="alert-row-line">
+                  <span className="alert-row-name">{drugName(b.drugId)}</span>
+                  <span className="alert-row-value alert-row-value--error">
+                    Exp {new Date(b.expiryDate).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: '2-digit' })}
+                  </span>
+                </div>
+                <div className="alert-row-meta">Batch {b.batchNumber}</div>
+              </AlertRow>
+            ))}
+            {expiryAlerts.length > 10 && <p className="dash-more">+{expiryAlerts.length - 10} more</p>}
           </div>
+        </Card>
 
-          {/* Reorder Alerts */}
-          <div className="card card-elevated">
-            <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <h3 style={{ margin: 0, fontSize: 14 }}>Low Stock <span style={{ color: '#d97706' }}>({reorderAlerts.length})</span></h3>
-            </div>
-            <div className="card-body" style={{ padding: '12px 16px', maxHeight: 260, overflowY: 'auto' }}>
-              {reorderAlerts.length === 0 ? (
-                <p style={{ fontSize: 13, color: '#16a34a', margin: 0 }}>All drugs adequately stocked</p>
-              ) : reorderAlerts.map((a, i) => (
-                <AlertRow key={i} type="warning">
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span style={{ fontWeight: 600 }}>{a.drugName || drugName(a.drugId)}</span>
-                    <span style={{ color: '#92400e', fontWeight: 700, fontSize: 12 }}>
-                      {parseFloat(a.currentStock || 0).toFixed(0)} / {parseFloat(a.reorderQty || 0).toFixed(0)} units
-                    </span>
-                  </div>
-                </AlertRow>
-              ))}
-            </div>
+        <Card
+          padded={false}
+          title={<>Low Stock <span className="dash-count-warning">({reorderAlerts.length})</span></>}
+        >
+          <div className="dash-alert-list">
+            {reorderAlerts.length === 0 ? (
+              <p className="dash-empty">All drugs adequately stocked</p>
+            ) : reorderAlerts.map((a, i) => (
+              <AlertRow key={i} tone="warning">
+                <div className="alert-row-line">
+                  <span className="alert-row-name">{a.drugName || drugName(a.drugId)}</span>
+                  <span className="alert-row-value alert-row-value--warning">
+                    {parseFloat(a.currentStock || 0).toFixed(0)} / {parseFloat(a.reorderQty || 0).toFixed(0)} units
+                  </span>
+                </div>
+              </AlertRow>
+            ))}
           </div>
-        </div>
+        </Card>
+      </div>
 
-        {/* Today's transactions */}
-        <div className="card card-elevated">
-          <div className="card-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-            <h3 style={{ margin: 0, fontSize: 14 }}>Today's Transactions ({todaySales.length})</h3>
-            <Link to="/pharmacy/sales-ledger" style={{ fontSize: 12, color: 'var(--color-primary)' }}>Full Ledger →</Link>
+      {/* Today's transactions */}
+      <Card
+        padded={false}
+        className="section-gap"
+        title={`Today's Transactions (${todaySales.length})`}
+        action={<Link to="/pharmacy/sales-ledger" className="dash-link">Full Ledger →</Link>}
+      >
+        {todaySales.length === 0 ? (
+          <div className="dash-empty-state">
+            No sales today yet. <Link to="/pharmacy/counter-sale">Start a sale →</Link>
           </div>
-          {todaySales.length === 0 ? (
-            <div className="card-body" style={{ textAlign: 'center', padding: '32px 16px', color: 'var(--color-gray-400)', fontSize: 13 }}>
-              No sales today yet. <Link to="/pharmacy/counter-sale">Start a sale →</Link>
-            </div>
-          ) : (
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Drug</th>
-                  <th style={{ textAlign: 'right' }}>Qty</th>
-                  <th style={{ textAlign: 'right' }}>Rate</th>
-                  <th style={{ textAlign: 'right' }}>Total</th>
-                  <th>Type</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {todaySales.slice(0, 15).map(s => {
-                  const sub = parseFloat(s.qty || 0) * parseFloat(s.rate || 0);
-                  const gst = sub * (parseFloat(s.gstRate || 0) / 100);
-                  const total = sub + gst - (parseFloat(s.discount) || 0);
-                  return (
-                    <tr key={s.id}>
-                      <td style={{ fontWeight: 500 }}>{drugName(s.drugId)}</td>
-                      <td style={{ textAlign: 'right' }}>{parseFloat(s.qty || 0)}</td>
-                      <td style={{ textAlign: 'right' }}>₹{fmt(s.rate)}</td>
-                      <td style={{ textAlign: 'right', fontWeight: 700 }}>₹{fmt(total)}</td>
-                      <td>
-                        <span style={{
-                          fontSize: 10, fontWeight: 700, padding: '2px 6px', borderRadius: 4,
-                          background: s.billType === 'HMS_CREDIT' ? '#eff6ff' : '#f0fdf4',
-                          color: s.billType === 'HMS_CREDIT' ? '#1d4ed8' : '#166534'
-                        }}>
-                          {s.billType || 'CASH'}
-                        </span>
-                      </td>
-                      <td style={{ fontSize: 12, color: 'var(--color-gray-400)' }}>{new Date(s.dispensedAt).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}</td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
-        </div>
+        ) : (
+          <Table columns={txColumns} data={todaySales.slice(0, 15)} />
+        )}
+      </Card>
 
-        {/* Quick actions */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 12, marginTop: 20 }}>
-          {[
-            { label: 'Counter Sale', to: '/pharmacy/counter-sale', icon: '🛒', color: '#16a34a' },
-            { label: 'Ward Dispensing', to: '/pharmacy/dispensing/queue', icon: '🏥', color: '#1d4ed8' },
-            { label: 'Drug Master', to: '/pharmacy/drugs', icon: '💊', color: '#7c3aed' },
-          ].map(({ label, to, icon, color }) => (
-            <Link key={to} to={to} style={{
-              padding: '16px', borderRadius: 10, textDecoration: 'none',
-              background: 'var(--color-white)', border: `1px solid ${color}30`,
-              display: 'flex', alignItems: 'center', gap: 12,
-              boxShadow: '0 1px 4px rgba(0,0,0,.06)', transition: 'box-shadow .15s'
-            }}
-              onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 12px rgba(0,0,0,.12)'}
-              onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(0,0,0,.06)'}
-            >
-              <span style={{ fontSize: 22 }}>{icon}</span>
-              <span style={{ fontWeight: 600, fontSize: 13, color }}>{label}</span>
-            </Link>
-          ))}
-        </div>
-
+      {/* Quick actions */}
+      <div className="grid grid-3 quick-actions">
+        {QUICK_ACTIONS.map(({ label, to, icon, tone }) => (
+          <Link key={to} to={to} className={`quick-action quick-action--${tone}`}>
+            <span className="quick-action-icon">{icon}</span>
+            <span className="quick-action-label">{label}</span>
+          </Link>
+        ))}
       </div>
     </div>
   );

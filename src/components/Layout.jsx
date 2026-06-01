@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { useState, Suspense } from 'react';
+import { Link, useLocation, Outlet } from 'react-router-dom';
+import ContentLoader from './shared/ContentLoader';
 import {
     LayoutDashboard, ShoppingCart, History,
     LogOut, ChevronDown, ChevronRight, Pill, FileText,
@@ -15,7 +16,7 @@ const EXTERNAL_APPS = [
     { label: 'Assets',    href: 'https://asset.zenohosp.com',     icon: LayoutGrid },
 ];
 
-export default function Layout({ children }) {
+export default function Layout() {
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [reportsOpen, setReportsOpen] = useState(
@@ -154,7 +155,7 @@ export default function Layout({ children }) {
                 </nav>
 
                 <div className="sidebar-footer">
-                    <div className="sidebar-section-title" style={{ marginTop: 0, marginBottom: 6 }}>Other Apps</div>
+                    <div className="sidebar-section-title sidebar-section-title--footer">Other Apps</div>
                     {EXTERNAL_APPS.map((app) => {
                         const Icon = app.icon;
                         return (
@@ -163,17 +164,16 @@ export default function Layout({ children }) {
                                 href={app.href}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="sidebar-link"
-                                style={{ display: 'flex', alignItems: 'center', gap: 10 }}
+                                className="sidebar-link sidebar-link--app"
                             >
                                 <Icon className="sidebar-icon" size={16} />
-                                <span style={{ flex: 1 }}>{app.label}</span>
-                                <ArrowUpRight size={12} style={{ opacity: 0.45 }} />
+                                <span className="sidebar-app-label">{app.label}</span>
+                                <ArrowUpRight size={12} className="sidebar-app-arrow" />
                             </a>
                         );
                     })}
 
-                    <button onClick={() => console.log('logout')} className="btn btn-sm sidebar-footer-signout" style={{ marginTop: 12 }}>
+                    <button onClick={() => console.log('logout')} className="btn btn-sm sidebar-footer-signout">
                         <LogOut size={14} />
                         Sign Out
                     </button>
@@ -181,9 +181,11 @@ export default function Layout({ children }) {
                 </div>
             </aside>
 
-            {/* Main Content */}
+            {/* Main Content — Outlet swaps, header + sidebar stay fixed */}
             <main className="main-content">
-                {children}
+                <Suspense fallback={<ContentLoader />}>
+                    <Outlet />
+                </Suspense>
             </main>
         </div>
     );

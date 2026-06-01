@@ -1,0 +1,13 @@
+/* Extra alert tones — base .alert + success/error live in components.css */
+
+.alert-warning {
+    background: var(--color-warning-subtle);
+    border-color: rgba(245, 158, 11, 0.3);
+    color: var(--color-warning-dark);
+}
+
+.alert-info {
+    background: var(--color-info-subtle);
+    border-color: rgba(99, 102, 241, 0.3);
+    color: var(--color-info-dark);
+}

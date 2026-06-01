@@ -196,6 +196,25 @@
   flex-shrink: 0;
 }
 
+.sidebar-section-title--footer {
+  margin-top: 0;
+  margin-bottom: 6px;
+}
+
+.sidebar-link--app {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.sidebar-app-label {
+  flex: 1;
+}
+
+.sidebar-app-arrow {
+  opacity: 0.45;
+}
+
 .sidebar-footer-signout {
   justify-content: center;
   background-color: #fee2e2;
@@ -203,6 +222,7 @@
   border: 1px solid #fecaca;
   font-size: 12px;
   font-weight: 600;
+  margin-top: 12px;
 }
 
 .sidebar-footer-signout:hover:not(:disabled) {

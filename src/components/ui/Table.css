@@ -1,0 +1,22 @@
+/* Reusable Table — builds on the shared .table class in components.css */
+
+.table-wrap {
+    overflow-x: auto;
+}
+
+.table thead th.col-right,
+.table tbody td.col-right {
+    text-align: right;
+}
+
+.table thead th.col-center,
+.table tbody td.col-center {
+    text-align: center;
+}
+
+.table-state {
+    padding: var(--spacing-10) var(--spacing-5);
+    text-align: center;
+    color: var(--color-gray-400);
+    font-size: var(--fs-sm);
+}

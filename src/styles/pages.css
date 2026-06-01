@@ -1,0 +1,26 @@
+/* Reusable page layout helpers — grids + section spacing.
+   Pages live inside the already-padded .main-content, so no page padding here. */
+
+.grid {
+    display: grid;
+    gap: var(--spacing-4);
+}
+
+.grid-2 { grid-template-columns: repeat(2, 1fr); }
+.grid-3 { grid-template-columns: repeat(3, 1fr); }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+.grid-gap-lg { gap: var(--spacing-5); }
+
+.section-gap { margin-bottom: var(--spacing-6); }
+
+@media (max-width: 1024px) {
+    .grid-4 { grid-template-columns: repeat(2, 1fr); }
+    .grid-3 { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 640px) {
+    .grid-2,
+    .grid-3,
+    .grid-4 { grid-template-columns: 1fr; }
+}

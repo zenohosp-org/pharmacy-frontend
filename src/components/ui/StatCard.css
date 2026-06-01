@@ -1,0 +1,40 @@
+.stat-card {
+    padding: 20px 24px;
+}
+
+.stat-card-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.stat-card-label {
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-500);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--spacing-2);
+}
+
+.stat-card-value {
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+}
+
+.stat-card-value.tone-default { color: var(--color-gray-900); }
+.stat-card-value.tone-success { color: var(--color-success-dark); }
+.stat-card-value.tone-danger  { color: var(--color-error-dark); }
+.stat-card-value.tone-warning { color: var(--color-warning-dark); }
+
+.stat-card-sub {
+    font-size: var(--fs-sm);
+    color: var(--color-gray-400);
+    margin-top: var(--spacing-1);
+}
+
+.stat-card-icon {
+    font-size: 28px;
+    line-height: 1;
+}
