@@ -1,6 +1,8 @@
 import { useState, Suspense } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import ContentLoader from './shared/ContentLoader';
+import Header from './Header';
+import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard, ShoppingCart, History,
     LogOut, ChevronDown, ChevronRight, Pill, FileText,
@@ -18,6 +20,7 @@ const EXTERNAL_APPS = [
 
 export default function Layout() {
     const location = useLocation();
+    const { logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [reportsOpen, setReportsOpen] = useState(
         ['/pharmacy/sales-ledger', '/pharmacy/reports'].includes(location.pathname)
@@ -173,7 +176,7 @@ export default function Layout() {
                         );
                     })}
 
-                    <button onClick={() => console.log('logout')} className="btn btn-sm sidebar-footer-signout">
+                    <button onClick={logout} className="btn btn-sm sidebar-footer-signout">
                         <LogOut size={14} />
                         Sign Out
                     </button>
@@ -181,12 +184,16 @@ export default function Layout() {
                 </div>
             </aside>
 
-            {/* Main Content — Outlet swaps, header + sidebar stay fixed */}
-            <main className="main-content">
-                <Suspense fallback={<ContentLoader />}>
-                    <Outlet />
-                </Suspense>
-            </main>
+            {/* Right column — fixed header + scrollable content.
+                Outlet swaps, header + sidebar stay fixed. */}
+            <div className="app-main">
+                <Header />
+                <main className="main-content">
+                    <Suspense fallback={<ContentLoader />}>
+                        <Outlet />
+                    </Suspense>
+                </main>
+            </div>
         </div>
     );
 }

@@ -20,3 +20,32 @@
     color: var(--color-gray-400);
     font-size: var(--fs-sm);
 }
+
+/* Expandable rows */
+.col-expand {
+    width: 44px;
+    text-align: center;
+}
+
+.table-expand-btn {
+    border: none;
+    background: transparent;
+    color: var(--color-gray-500);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 4px;
+    border-radius: var(--radius-sm);
+    transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+.table-expand-btn:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-900);
+}
+
+.table-expanded-row > td {
+    padding: 0;
+    background: var(--color-gray-50);
+}

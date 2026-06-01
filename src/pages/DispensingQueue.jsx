@@ -1,6 +1,12 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPendingPrescriptions } from '../api/pharmacyClient';
+import PageHeader from '../components/shared/PageHeader';
+import StatusBadge from '../components/shared/StatusBadge';
+import Alert from '../components/shared/Alert';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Table from '../components/ui/Table';
 import './DispensingQueue.css';
 
 const fmtTime = (iso) => {
@@ -13,9 +19,6 @@ const fmtTime = (iso) => {
     return iso;
   }
 };
-
-const statusClass = (s) =>
-  s === 'PARTIAL' ? 'queue-status queue-status-partial' : 'queue-status queue-status-pending';
 
 export default function DispensingQueue() {
   const [rows, setRows] = useState([]);
@@ -55,97 +58,78 @@ export default function DispensingQueue() {
     navigate('/pharmacy/dispensing', { state: { prefill: row } });
   };
 
-  return (
-    <div className="queue-container">
-      <div className="queue-header">
-        <div className="queue-header-text">
-          <h1>Ward Dispensing</h1>
-          <p>Pending IPD prescriptions across the hospital. Oldest first.</p>
-        </div>
-        <div className="queue-controls">
-          <input
-            type="text"
-            className="queue-search"
-            placeholder="Search patient, drug, ward..."
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          />
-          <button type="button" className="queue-refresh-btn" onClick={load} disabled={loading}>
-            {loading ? 'Loading...' : 'Refresh'}
-          </button>
-        </div>
-      </div>
-
-      {error && <div className="queue-error">{error}</div>}
-
-      <div className="queue-card">
-        {filtered.length === 0 ? (
-          <div className="queue-empty">
-            {loading ? 'Loading queue...' : 'No pending IPD prescriptions.'}
+  const columns = [
+    { header: 'Patient', render: (_, r) => (
+      <>
+        <div className="cell-strong">{r.patientName}</div>
+        <div className="cell-muted">{[r.roomLabel, r.wardLabel].filter(Boolean).join(' · ')}</div>
+      </>
+    ) },
+    { header: 'Drug', render: (_, r) => (
+      <>
+        <div className="cell-strong">{r.drugName}</div>
+        <div className="cell-muted">{[r.drugStrength, r.drugForm].filter(Boolean).join(' · ')}</div>
+      </>
+    ) },
+    { header: 'Dose / Route', render: (_, r) => (
+      <>
+        <div>{r.dose || '—'}</div>
+        <div className="cell-muted">{[r.frequency, r.route].filter(Boolean).join(' · ')}</div>
+      </>
+    ) },
+    { header: 'Qty', render: (_, r) => {
+      const remaining = (r.quantity ?? 0) - (r.dispensedQty ?? 0);
+      return (
+        <>
+          <div className="cell-strong">{remaining}</div>
+          <div className="cell-muted">
+            of {r.quantity}{r.dispensedQty > 0 ? ` (${r.dispensedQty} done)` : ''}
           </div>
-        ) : (
-          <table className="queue-table">
-            <thead>
-              <tr>
-                <th>Patient</th>
-                <th>Drug</th>
-                <th>Dose / Route</th>
-                <th>Qty</th>
-                <th>Status</th>
-                <th>Prescribed</th>
-                <th>Doctor</th>
-                <th></th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map((r) => {
-                const remaining = (r.quantity ?? 0) - (r.dispensedQty ?? 0);
-                return (
-                  <tr key={r.prescriptionItemId}>
-                    <td>
-                      <div className="queue-cell-strong">{r.patientName}</div>
-                      <div className="queue-cell-muted">
-                        {[r.roomLabel, r.wardLabel].filter(Boolean).join(' · ')}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="queue-cell-strong">{r.drugName}</div>
-                      <div className="queue-cell-muted">
-                        {[r.drugStrength, r.drugForm].filter(Boolean).join(' · ')}
-                      </div>
-                    </td>
-                    <td>
-                      <div>{r.dose || '—'}</div>
-                      <div className="queue-cell-muted">
-                        {[r.frequency, r.route].filter(Boolean).join(' · ')}
-                      </div>
-                    </td>
-                    <td>
-                      <div className="queue-cell-strong">{remaining}</div>
-                      <div className="queue-cell-muted">
-                        of {r.quantity}
-                        {r.dispensedQty > 0 ? ` (${r.dispensedQty} done)` : ''}
-                      </div>
-                    </td>
-                    <td><span className={statusClass(r.status)}>{r.status}</span></td>
-                    <td>{fmtTime(r.prescribedAt)}</td>
-                    <td>{r.doctorName || '—'}</td>
-                    <td>
-                      <button
-                        type="button"
-                        className="queue-dispense-btn"
-                        onClick={() => dispenseRow(r)}
-                      >
-                        Dispense
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        )}
-      </div>
+        </>
+      );
+    } },
+    { header: 'Status', render: (_, r) => (
+      <StatusBadge tone={r.status === 'PARTIAL' ? 'primary' : 'warning'}>{r.status}</StatusBadge>
+    ) },
+    { header: 'Prescribed', render: (_, r) => fmtTime(r.prescribedAt) },
+    { header: 'Doctor', render: (_, r) => r.doctorName || '—' },
+    { header: '', render: (_, r) => (
+      <Button size="sm" onClick={() => dispenseRow(r)}>Dispense</Button>
+    ) },
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title="Ward Dispensing"
+        subtitle="Pending IPD prescriptions across the hospital. Oldest first."
+        actions={
+          <>
+            <input
+              type="text"
+              className="form-input queue-search"
+              placeholder="Search patient, drug, ward..."
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            />
+            <Button variant="secondary" onClick={load} disabled={loading}>
+              {loading ? 'Loading…' : 'Refresh'}
+            </Button>
+          </>
+        }
+      />
+
+      {error && <Alert tone="error" className="section-gap">{error}</Alert>}
+
+      <Card padded={false}>
+        <Table
+          columns={columns}
+          data={filtered}
+          loading={loading}
+          emptyMessage="No pending IPD prescriptions."
+          getRowKey={(r) => r.prescriptionItemId}
+        />
+      </Card>
     </div>
   );
 }

@@ -1,13 +1,17 @@
 import { useState, useEffect } from 'react';
 import { getDrugs, updateDrug, deleteDrug, importDrugsExcel } from '../api/pharmacyClient';
+import PageHeader from '../components/shared/PageHeader';
+import ContentLoader from '../components/shared/ContentLoader';
+import Alert from '../components/shared/Alert';
+import Button from '../components/ui/Button';
+import Card from '../components/ui/Card';
+import Table from '../components/ui/Table';
+import Modal from '../components/ui/Modal';
+import Input from '../components/ui/Input';
+import Select from '../components/ui/Select';
 import './DrugMaster.css';
 
-const SCHEDULE_COLORS = {
-  OTC: '#4CAF50',
-  H: '#FF9800',
-  H1: '#F44336',
-  X: '#B71C1C'
-};
+const SCHEDULES = ['OTC', 'H', 'H1', 'X'];
 
 const EMPTY_FORM = {
   name: '',
@@ -37,14 +41,6 @@ export default function DrugMaster() {
   const [importing, setImporting] = useState(false);
   const [importResult, setImportResult] = useState(null);
 
-  useEffect(() => {
-    fetchDrugs();
-  }, []);
-
-  useEffect(() => {
-    applyFilters();
-  }, [drugs, searchQuery, selectedSchedule]);
-
   const fetchDrugs = async () => {
     try {
       setLoading(true);
@@ -59,7 +55,11 @@ export default function DrugMaster() {
     }
   };
 
-  const applyFilters = () => {
+  useEffect(() => {
+    fetchDrugs();
+  }, []);
+
+  useEffect(() => {
     let filtered = [...drugs];
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
@@ -72,7 +72,7 @@ export default function DrugMaster() {
       filtered = filtered.filter(d => d.drugSchedule === selectedSchedule);
     }
     setFilteredDrugs(filtered);
-  };
+  }, [drugs, searchQuery, selectedSchedule]);
 
   const openEdit = (drug) => {
     setEditingDrug(drug);
@@ -122,7 +122,7 @@ export default function DrugMaster() {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    e?.preventDefault();
     if (!formData.name.trim()) { setFormError('Brand name is required'); return; }
     setSaving(true);
     setFormError(null);
@@ -141,14 +141,35 @@ export default function DrugMaster() {
     }
   };
 
-  return (
-    <div className="drug-master-container">
-      <div className="mb-6">
-        <h1 className="page-title">Drug Master</h1>
-        <p className="page-subtitle">Pharmacy drugs are managed as inventory items. Add or edit from here or from Inventory → Product Master.</p>
-      </div>
+  const setField = (key) => (e) => setFormData(p => ({ ...p, [key]: e.target.value }));
 
-      {error && <div className="alert alert-error">{error}</div>}
+  const columns = [
+    { header: 'Brand Name', render: (_, d) => <span className="font-semibold">{d.name}</span> },
+    { header: 'Generic Name', render: (_, d) => d.genericName || '—' },
+    { header: 'HSN Code', render: (_, d) => d.hsnCode || '—' },
+    { header: 'Schedule', render: (_, d) => (
+      d.drugSchedule
+        ? <span className={`drug-schedule-badge drug-schedule-badge--${SCHEDULES.includes(d.drugSchedule) ? d.drugSchedule : 'default'}`}>{d.drugSchedule}</span>
+        : '—'
+    ) },
+    { header: 'Unit', render: (_, d) => d.unit || '—' },
+    { header: 'Reorder Qty', render: (_, d) => d.drugReorderQty ?? '—' },
+    { header: 'Actions', render: (_, d) => (
+      <div className="action-group">
+        <Button size="sm" onClick={() => openEdit(d)}>Edit</Button>
+        <Button size="sm" variant="danger" onClick={() => handleDelete(d.id)}>Delete</Button>
+      </div>
+    ) },
+  ];
+
+  return (
+    <div>
+      <PageHeader
+        title="Drug Master"
+        subtitle="Pharmacy drugs are managed as inventory items. Add or edit from here or from Inventory → Product Master."
+      />
+
+      {error && <Alert tone="error" className="section-gap">{error}</Alert>}
 
       <div className="toolbar">
         <input
@@ -164,10 +185,7 @@ export default function DrugMaster() {
           className="form-select"
         >
           <option value="">All Schedules</option>
-          <option value="OTC">OTC</option>
-          <option value="H">H</option>
-          <option value="H1">H1</option>
-          <option value="X">X</option>
+          {SCHEDULES.map(s => <option key={s} value={s}>{s}</option>)}
         </select>
         <label className="file-upload-label">
           {importing ? 'Importing...' : 'Import Excel'}
@@ -185,7 +203,7 @@ export default function DrugMaster() {
       </div>
 
       {importResult && (
-        <div className="alert alert-success import-result">
+        <Alert tone="success" className="section-gap">
           Imported {importResult.imported} drug(s).
           {importResult.errors?.length > 0 && (
             <div className="import-errors">
@@ -197,113 +215,48 @@ export default function DrugMaster() {
               </ul>
             </div>
           )}
-        </div>
+        </Alert>
       )}
 
-      {loading && <div>Loading...</div>}
-      {!loading && !error && (
+      {loading ? (
+        <ContentLoader label="Loading drugs…" />
+      ) : (
         <>
-          <div className="drug-count">
-            Showing {filteredDrugs.length} of {drugs.length} drugs
-          </div>
-          <div className="table-wrapper">
-            <table className="table">
-              <thead>
-                <tr>
-                  <th>Brand Name</th>
-                  <th>Generic Name</th>
-                  <th>HSN Code</th>
-                  <th>Schedule</th>
-                  <th>Unit</th>
-                  <th>Reorder Qty</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredDrugs.length === 0 ? (
-                  <tr>
-                    <td colSpan="7" className="text-center">No drugs found</td>
-                  </tr>
-                ) : (
-                  filteredDrugs.map(drug => (
-                    <tr key={drug.id}>
-                      <td className="font-semibold">{drug.name}</td>
-                      <td>{drug.genericName || '—'}</td>
-                      <td>{drug.hsnCode || '—'}</td>
-                      <td>
-                        {drug.drugSchedule
-                          ? <span className="drug-schedule-badge" style={{ backgroundColor: SCHEDULE_COLORS[drug.drugSchedule] || '#999' }}>{drug.drugSchedule}</span>
-                          : '—'}
-                      </td>
-                      <td>{drug.unit || '—'}</td>
-                      <td>{drug.drugReorderQty ?? '—'}</td>
-                      <td className="action-cell">
-                        <div className="action-group">
-                          <button onClick={() => openEdit(drug)} className="btn btn-sm btn-primary">Edit</button>
-                          <button onClick={() => handleDelete(drug.id)} className="btn btn-sm btn-danger">Delete</button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+          <div className="drug-count">Showing {filteredDrugs.length} of {drugs.length} drugs</div>
+          <Card padded={false}>
+            <Table columns={columns} data={filteredDrugs} emptyMessage="No drugs found" />
+          </Card>
         </>
       )}
 
-      {showModal && (
-        <div className="modal-overlay" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div className="modal" style={{ backgroundColor: 'white', borderRadius: '8px', padding: '24px', width: '100%', maxWidth: '480px', margin: '16px' }}>
-            <h2 style={{ marginBottom: '16px', fontSize: '1.125rem', fontWeight: 600 }}>
-              Edit Drug
-            </h2>
-            {formError && <div className="alert alert-error" style={{ marginBottom: '12px' }}>{formError}</div>}
-            <form onSubmit={handleSubmit}>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Brand Name *</label>
-                  <input type="text" className="form-input" value={formData.name} onChange={e => setFormData(p => ({ ...p, name: e.target.value }))} required placeholder="e.g. Calpol" />
-                </div>
-                <div>
-                  <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Generic Name</label>
-                  <input type="text" className="form-input" value={formData.genericName} onChange={e => setFormData(p => ({ ...p, genericName: e.target.value }))} placeholder="e.g. Paracetamol" />
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>HSN Code</label>
-                    <input type="text" className="form-input" value={formData.hsnCode} onChange={e => setFormData(p => ({ ...p, hsnCode: e.target.value }))} placeholder="e.g. 30049099" maxLength={10} />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Schedule</label>
-                    <select className="form-select" value={formData.drugSchedule} onChange={e => setFormData(p => ({ ...p, drugSchedule: e.target.value }))}>
-                      <option value="">— Select —</option>
-                      <option value="OTC">OTC</option>
-                      <option value="H">H</option>
-                      <option value="H1">H1</option>
-                      <option value="X">X</option>
-                    </select>
-                  </div>
-                </div>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Unit</label>
-                    <input type="text" className="form-input" value={formData.unit} onChange={e => setFormData(p => ({ ...p, unit: e.target.value }))} placeholder="e.g. Tablet, Vial" />
-                  </div>
-                  <div>
-                    <label style={{ display: 'block', marginBottom: '4px', fontWeight: 500, fontSize: '0.875rem' }}>Reorder Qty</label>
-                    <input type="number" className="form-input" value={formData.drugReorderQty} onChange={e => setFormData(p => ({ ...p, drugReorderQty: e.target.value }))} placeholder="e.g. 50" min="0" />
-                  </div>
-                </div>
-              </div>
-              <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end', marginTop: '20px' }}>
-                <button type="button" className="btn btn-secondary" onClick={() => setShowModal(false)} disabled={saving}>Cancel</button>
-                <button type="submit" className="btn btn-primary" disabled={saving}>{saving ? 'Saving...' : 'Update Drug'}</button>
-              </div>
-            </form>
+      <Modal
+        open={showModal}
+        onClose={() => setShowModal(false)}
+        title="Edit Drug"
+        footer={
+          <>
+            <Button variant="secondary" onClick={() => setShowModal(false)} disabled={saving}>Cancel</Button>
+            <Button type="submit" form="drug-form" disabled={saving}>{saving ? 'Saving…' : 'Update Drug'}</Button>
+          </>
+        }
+      >
+        {formError && <Alert tone="error" className="section-gap">{formError}</Alert>}
+        <form id="drug-form" onSubmit={handleSubmit}>
+          <Input label="Brand Name" required value={formData.name} onChange={setField('name')} placeholder="e.g. Calpol" />
+          <Input label="Generic Name" value={formData.genericName} onChange={setField('genericName')} placeholder="e.g. Paracetamol" />
+          <div className="modal-form-row">
+            <Input label="HSN Code" value={formData.hsnCode} onChange={setField('hsnCode')} placeholder="e.g. 30049099" maxLength={10} />
+            <Select label="Schedule" value={formData.drugSchedule} onChange={setField('drugSchedule')}>
+              <option value="">— Select —</option>
+              {SCHEDULES.map(s => <option key={s} value={s}>{s}</option>)}
+            </Select>
           </div>
-        </div>
-      )}
+          <div className="modal-form-row">
+            <Input label="Unit" value={formData.unit} onChange={setField('unit')} placeholder="e.g. Tablet, Vial" />
+            <Input label="Reorder Qty" type="number" value={formData.drugReorderQty} onChange={setField('drugReorderQty')} placeholder="e.g. 50" min="0" />
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 }

@@ -1,20 +1,12 @@
 import { useState, useEffect } from 'react';
 import { getDrugs, getAllStock, getExpiryAlerts, getReorderAlerts, getBatches } from '../api/pharmacyClient';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  IconButton,
-  Collapse,
-  Box,
-  Typography
-} from '@mui/material';
-import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
-import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
+import PageHeader from '../components/shared/PageHeader';
+import ContentLoader from '../components/shared/ContentLoader';
+import Alert from '../components/shared/Alert';
+import StatusBadge from '../components/shared/StatusBadge';
+import Card from '../components/ui/Card';
+import Table from '../components/ui/Table';
+import './StockDashboard.css';
 
 export default function StockDashboard() {
   const [drugs, setDrugs] = useState([]);
@@ -25,10 +17,6 @@ export default function StockDashboard() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const fetchData = async () => {
     try {
       setLoading(true);
@@ -36,7 +24,7 @@ export default function StockDashboard() {
         getDrugs(),
         getAllStock(),
         getExpiryAlerts(30),
-        getReorderAlerts()
+        getReorderAlerts(),
       ]);
       setDrugs(drugsData);
       setStock(stockData);
@@ -51,220 +39,113 @@ export default function StockDashboard() {
     }
   };
 
+  useEffect(() => {
+    fetchData();
+  }, []);
+
   const getStockQtyForDrug = (drugId) => {
     const entry = stock.find(s => s.drugId === drugId.toString() || s.drugId === drugId);
     return entry ? parseFloat(entry.totalQty) : 0;
   };
-
-  const isDrugInExpiryAlert = (drugId) => {
-    return expiryAlerts.some(b => b.drugId === drugId);
-  };
-
-  const getDrugReorderAlert = (drugId) => {
-    return reorderAlerts.find(a => a.drugId === drugId);
-  };
-
+  const isDrugInExpiryAlert = (drugId) => expiryAlerts.some(b => b.drugId === drugId);
+  const getDrugReorderAlert = (drugId) => reorderAlerts.find(a => a.drugId === drugId);
   const getDrugName = (drugId) => {
     const drug = drugs.find(d => d.id === drugId);
     return drug ? `${drug.brandName} (${drug.genericName})` : drugId;
   };
 
-  const StockRow = ({ drug }) => {
-    const [open, setOpen] = useState(false);
-    const qty = getStockQtyForDrug(drug.id);
-    const hasExpiryAlert = isDrugInExpiryAlert(drug.id);
-    const reorderAlert = getDrugReorderAlert(drug.id);
-    const batches = batchDetails[drug.id] || [];
+  const loadBatches = async (drug) => {
+    if (batchDetails[drug.id]) return;
+    try {
+      const fetched = await getBatches(drug.id);
+      setBatchDetails(prev => ({ ...prev, [drug.id]: fetched }));
+    } catch (e) {
+      console.error('Failed to fetch batches:', e);
+    }
+  };
 
-    const handleLoadBatches = async () => {
-      if (!batchDetails[drug.id]) {
-        try {
-          const fetchedBatches = await getBatches(drug.id);
-          setBatchDetails(prev => ({
-            ...prev,
-            [drug.id]: fetchedBatches
-          }));
-        } catch (e) {
-          console.error('Failed to fetch batches:', e);
-        }
-      }
-    };
-
-    const handleClick = () => {
-      if (!open) {
-        handleLoadBatches();
-      }
-      setOpen(!open);
-    };
-
+  const statusBadges = (drug) => {
+    const hasExpiry = isDrugInExpiryAlert(drug.id);
+    const reorder = getDrugReorderAlert(drug.id);
     return (
-      <>
-        <TableRow sx={{ '& > *': { borderBottom: 'unset' } }}>
-          <TableCell>
-            <IconButton
-              aria-label="expand row"
-              size="small"
-              onClick={handleClick}
-            >
-              {open ? <KeyboardArrowUpIcon /> : <KeyboardArrowDownIcon />}
-            </IconButton>
-          </TableCell>
-          <TableCell component="th" scope="row">
-            <div style={{ fontWeight: 600, color: 'var(--color-gray-900)' }}>
-              {drug.brandName}
-            </div>
-            <div style={{ fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', marginTop: '4px' }}>
-              {drug.genericName}
-            </div>
-          </TableCell>
-          <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-lg)' }}>
-            {qty.toFixed(2)}
-          </TableCell>
-          <TableCell align="center">
-            <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
-              {hasExpiryAlert && (
-                <span className="badge badge-error">Expiring</span>
-              )}
-              {reorderAlert && (
-                <span className="badge badge-warning">Low Stock</span>
-              )}
-              {!hasExpiryAlert && !reorderAlert && (
-                <span className="badge badge-success">OK</span>
-              )}
-            </div>
-          </TableCell>
-        </TableRow>
-        <TableRow>
-          <TableCell style={{ paddingBottom: 0, paddingTop: 0 }} colSpan={4}>
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <Box sx={{ margin: 2, backgroundColor: 'var(--color-gray-50)', borderRadius: '8px', padding: 2 }}>
-                <Typography variant="h6" gutterBottom sx={{ fontWeight: 600, marginBottom: 2 }}>
-                  Batch Details
-                </Typography>
-                {batches.length === 0 ? (
-                  <Typography variant="body2" sx={{ color: 'var(--color-gray-500)' }}>
-                    No batches available
-                  </Typography>
-                ) : (
-                  <TableContainer>
-                    <Table size="small" sx={{ backgroundColor: 'white' }}>
-                      <TableHead>
-                        <TableRow sx={{ backgroundColor: 'var(--color-gray-50)' }}>
-                          <TableCell sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)' }}>Batch Number</TableCell>
-                          <TableCell sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)' }}>Expiry Date</TableCell>
-                          <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)' }}>Qty</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {batches.map((batch) => (
-                          <TableRow key={batch.id}>
-                            <TableCell>
-                              <code style={{ backgroundColor: 'var(--color-gray-100)', padding: '2px 6px', borderRadius: '4px', fontSize: 'var(--fs-xs)' }}>
-                                {batch.batchNumber}
-                              </code>
-                            </TableCell>
-                            <TableCell>{new Date(batch.expiryDate).toLocaleDateString()}</TableCell>
-                            <TableCell align="right">
-                              <strong>{batch.receivedQty ? parseFloat(batch.receivedQty).toFixed(2) : '—'}</strong>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
-                )}
-              </Box>
-            </Collapse>
-          </TableCell>
-        </TableRow>
-      </>
+      <div className="stock-status-cell">
+        {hasExpiry && <StatusBadge tone="error">Expiring</StatusBadge>}
+        {reorder && <StatusBadge tone="warning">Low Stock</StatusBadge>}
+        {!hasExpiry && !reorder && <StatusBadge tone="success">OK</StatusBadge>}
+      </div>
     );
   };
 
-  if (loading) {
+  const batchColumns = [
+    { header: 'Batch Number', render: (_, b) => <code className="stock-batch-code">{b.batchNumber}</code> },
+    { header: 'Expiry Date', render: (_, b) => new Date(b.expiryDate).toLocaleDateString() },
+    { header: 'Qty', align: 'right', render: (_, b) => <strong>{b.receivedQty ? parseFloat(b.receivedQty).toFixed(2) : '—'}</strong> },
+  ];
+
+  const renderBatches = (drug) => {
+    const batches = batchDetails[drug.id] || [];
     return (
-      <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', backgroundColor: 'var(--color-bg-page)' }}>
-        <p style={{ color: 'var(--color-gray-500)', fontSize: 'var(--fs-lg)' }}>Loading stock data...</p>
+      <div className="stock-batch-box">
+        <div className="stock-batch-title">Batch Details</div>
+        {batches.length === 0 ? (
+          <p className="text-muted text-sm">No batches available</p>
+        ) : (
+          <Table columns={batchColumns} data={batches} />
+        )}
       </div>
     );
-  }
+  };
+
+  const columns = [
+    { header: 'Drug', render: (_, d) => (
+      <>
+        <div className="cell-strong">{d.brandName}</div>
+        <div className="cell-muted">{d.genericName}</div>
+      </>
+    ) },
+    { header: 'Total Qty', align: 'right', render: (_, d) => getStockQtyForDrug(d.id).toFixed(2) },
+    { header: 'Status', align: 'center', render: (_, d) => statusBadges(d) },
+  ];
+
+  if (loading) return <ContentLoader label="Loading stock data…" />;
 
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: 'var(--color-bg-page)' }}>
-      {/* Header */}
-      <div style={{
-        padding: 'var(--spacing-8)',
-        backgroundColor: 'var(--color-white)',
-        borderBottom: '1px solid var(--color-gray-200)'
-      }}>
-        <h1 style={{ marginBottom: 'var(--spacing-2)' }}>Stock Dashboard</h1>
-        <p style={{ margin: 0, color: 'var(--color-gray-600)' }}>
-          Monitor pharmacy inventory and stock levels
-        </p>
-      </div>
+    <div>
+      <PageHeader title="Stock Dashboard" subtitle="Monitor pharmacy inventory and stock levels" />
 
-      {/* Main Content */}
-      <div style={{ padding: 'var(--spacing-8)' }}>
-        {error && (
-          <div className="alert alert-error" style={{ marginBottom: 'var(--spacing-6)' }}>
-            {error}
-          </div>
-        )}
+      {error && <Alert tone="error" className="section-gap">{error}</Alert>}
 
-        {reorderAlerts.length > 0 && (
-          <div className="alert alert-warning" style={{ marginBottom: 'var(--spacing-6)' }}>
-            <strong>⚠️ {reorderAlerts.length} items need reordering</strong>
-            <ul style={{ marginBottom: 0, marginTop: 'var(--spacing-3)', paddingLeft: '20px' }}>
-              {reorderAlerts.map(alert => (
-                <li key={alert.drugId}>{alert.drugName}: {alert.currentStock} / {alert.reorderQty} units</li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {reorderAlerts.length > 0 && (
+        <Alert tone="warning" className="section-gap">
+          <strong>⚠️ {reorderAlerts.length} items need reordering</strong>
+          <ul className="stock-alert-list">
+            {reorderAlerts.map(a => (
+              <li key={a.drugId}>{a.drugName}: {a.currentStock} / {a.reorderQty} units</li>
+            ))}
+          </ul>
+        </Alert>
+      )}
 
-        {expiryAlerts.length > 0 && (
-          <div className="alert alert-error" style={{ marginBottom: 'var(--spacing-6)' }}>
-            <strong>🔴 {expiryAlerts.length} items expiring soon</strong>
-            <ul style={{ marginBottom: 0, marginTop: 'var(--spacing-3)', paddingLeft: '20px' }}>
-              {expiryAlerts.map(batch => (
-                <li key={batch.id}>{getDrugName(batch.drugId)}: Expires {new Date(batch.expiryDate).toLocaleDateString()}</li>
-              ))}
-            </ul>
-          </div>
-        )}
+      {expiryAlerts.length > 0 && (
+        <Alert tone="error" className="section-gap">
+          <strong>🔴 {expiryAlerts.length} items expiring soon</strong>
+          <ul className="stock-alert-list">
+            {expiryAlerts.map(b => (
+              <li key={b.id}>{getDrugName(b.drugId)}: Expires {new Date(b.expiryDate).toLocaleDateString()}</li>
+            ))}
+          </ul>
+        </Alert>
+      )}
 
-        {/* Stock Table */}
-        {drugs.length === 0 ? (
-          <Paper elevation={2} style={{ padding: 'var(--spacing-16) var(--spacing-8)', textAlign: 'center' }}>
-            <Typography variant="h6" sx={{ color: 'var(--color-gray-500)', marginBottom: 'var(--spacing-4)' }}>
-              No drugs in catalog
-            </Typography>
-          </Paper>
-        ) : (
-          <TableContainer component={Paper} elevation={2}>
-            <Box sx={{ padding: 2 }}>
-              <Typography variant="h6" sx={{ marginBottom: 2, fontWeight: 600 }}>
-                Current Stock Levels ({drugs.length})
-              </Typography>
-            </Box>
-            <Table aria-label="collapsible stock table">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: 'var(--color-gray-50)' }}>
-                  <TableCell sx={{ width: '40px' }} />
-                  <TableCell sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Drug</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Total Qty</TableCell>
-                  <TableCell align="center" sx={{ fontWeight: 600, fontSize: 'var(--fs-xs)', color: 'var(--color-gray-500)', textTransform: 'uppercase', letterSpacing: '0.6px' }}>Status</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {drugs.map((drug) => (
-                  <StockRow key={drug.id} drug={drug} />
-                ))}
-              </TableBody>
-            </Table>
-          </TableContainer>
-        )}
-      </div>
+      <Card padded={false} title={`Current Stock Levels (${drugs.length})`}>
+        <Table
+          columns={columns}
+          data={drugs}
+          emptyMessage="No drugs in catalog"
+          renderExpanded={renderBatches}
+          onExpand={loadBatches}
+        />
+      </Card>
     </div>
   );
 }

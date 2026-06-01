@@ -1,0 +1,102 @@
+/* Desktop top header bar (mirrors inventory). Hidden on mobile — the
+   slide-over hamburger header (.app-header) serves there instead. */
+
+.ph-header {
+    height: 56px;
+    background: var(--color-white);
+    border-bottom: 1px solid var(--color-gray-200);
+    display: flex;
+    align-items: center;
+    padding: 0 var(--spacing-5);
+    gap: var(--spacing-3);
+    flex-shrink: 0;
+}
+
+.ph-header-title {
+    font-size: var(--fs-base);
+    font-weight: var(--fw-semibold);
+    color: var(--color-gray-700);
+    flex: 1;
+}
+
+.ph-header-right {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-1);
+}
+
+.ph-header-divider {
+    height: 32px;
+    width: 1px;
+    background: var(--color-gray-200);
+    margin: 0 var(--spacing-2);
+}
+
+.ph-header-user {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-3);
+    margin-left: var(--spacing-1);
+}
+
+.ph-header-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--color-gray-100);
+    border: 1px solid var(--color-gray-300);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-bold);
+    color: var(--color-gray-700);
+    flex-shrink: 0;
+}
+
+.ph-header-name-group {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    line-height: 1.25;
+}
+
+.ph-header-name {
+    font-size: var(--fs-sm);
+    font-weight: var(--fw-semibold);
+    color: var(--color-gray-900);
+}
+
+.ph-header-role {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+    text-transform: capitalize;
+}
+
+.ph-header-logout-btn {
+    padding: 6px;
+    border-radius: var(--radius-md);
+    color: var(--color-gray-600);
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: color var(--transition-fast), background var(--transition-fast);
+}
+
+.ph-header-logout-btn:hover {
+    color: var(--color-error);
+    background: var(--color-error-subtle);
+}
+
+@media (max-width: 768px) {
+    .ph-header {
+        display: none;
+    }
+    .ph-header-name-group {
+        display: none;
+    }
+}

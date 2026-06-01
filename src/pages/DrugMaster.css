@@ -72,6 +72,7 @@
 }
 
 .drug-schedule-badge {
+  display: inline-block;
   padding: var(--spacing-1) var(--spacing-2);
   border-radius: var(--radius-full);
   color: white;
@@ -79,6 +80,12 @@
   font-weight: var(--fw-semibold);
   text-align: center;
 }
+
+.drug-schedule-badge--OTC { background-color: #4CAF50; }
+.drug-schedule-badge--H { background-color: #FF9800; }
+.drug-schedule-badge--H1 { background-color: #F44336; }
+.drug-schedule-badge--X { background-color: #B71C1C; }
+.drug-schedule-badge--default { background-color: #999999; }
 
 .action-buttons {
   display: flex;
