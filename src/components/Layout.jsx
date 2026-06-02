@@ -2,10 +2,9 @@ import { useState, Suspense } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import ContentLoader from './shared/ContentLoader';
 import Header from './Header';
-import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard, ShoppingCart, History,
-    LogOut, ChevronDown, ChevronRight, Pill, FileText,
+    ChevronDown, ChevronRight, Pill, FileText,
     Menu as MenuIcon, X as XIcon,
     Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight
 } from 'lucide-react';
@@ -20,7 +19,6 @@ const EXTERNAL_APPS = [
 
 export default function Layout() {
     const location = useLocation();
-    const { logout } = useAuth();
     const [sidebarOpen, setSidebarOpen] = useState(false);
     const [reportsOpen, setReportsOpen] = useState(
         ['/pharmacy/sales-ledger', '/pharmacy/reports'].includes(location.pathname)
@@ -176,10 +174,6 @@ export default function Layout() {
                         );
                     })}
 
-                    <button onClick={logout} className="btn btn-sm sidebar-footer-signout">
-                        <LogOut size={14} />
-                        Sign Out
-                    </button>
                     <div className="sidebar-copyright">© 2026 Pharmacy Manager</div>
                 </div>
             </aside>
