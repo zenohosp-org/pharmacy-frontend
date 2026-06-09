@@ -240,7 +240,7 @@ export default function WardDispensing() {
         padding: '16px 24px', background: 'var(--color-white)',
         borderBottom: '1px solid var(--color-gray-200)'
       }}>
-        <h1 style={{ margin: 0, fontSize: 20 }}>Ward Dispensing</h1>
+        <h1 style={{ margin: 0, fontSize: 20 }}>IPD Dispensing</h1>
         <p style={{ margin: 0, color: 'var(--color-gray-500)', fontSize: 13 }}>
           Issue drugs to an admitted patient — charged to their HMS encounter bill
         </p>

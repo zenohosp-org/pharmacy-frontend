@@ -14,7 +14,7 @@ const fmt = (n) => (parseFloat(n) || 0).toFixed(2);
 
 const QUICK_ACTIONS = [
   { label: 'Counter Sale', to: '/pharmacy/counter-sale', icon: '🛒', tone: 'success' },
-  { label: 'Ward Dispensing', to: '/pharmacy/dispensing/queue', icon: '🏥', tone: 'primary' },
+  { label: 'IPD Dispensing', to: '/pharmacy/dispensing/queue', icon: '🏥', tone: 'primary' },
   { label: 'Drug Master', to: '/pharmacy/drugs', icon: '💊', tone: 'info' },
 ];
 

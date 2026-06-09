@@ -101,7 +101,7 @@ export default function DispensingQueue() {
   return (
     <div>
       <PageHeader
-        title="Ward Dispensing"
+        title="IPD Dispensing"
         subtitle="Pending IPD prescriptions across the hospital. Oldest first."
         actions={
           <>
