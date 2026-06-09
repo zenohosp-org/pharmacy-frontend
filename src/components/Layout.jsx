@@ -98,7 +98,7 @@ export default function Layout() {
                             </Link>
                         </li>
 
-                        {/* Ward Dispensing */}
+                        {/* IPD Dispensing */}
                         <li>
                             <Link
                                 to="/pharmacy/dispensing/queue"
@@ -106,7 +106,7 @@ export default function Layout() {
                                 onClick={() => setSidebarOpen(false)}
                             >
                                 <Pill className="sidebar-icon" size={18} />
-                                Ward Dispensing
+                                IPD Dispensing
                             </Link>
                         </li>
 
