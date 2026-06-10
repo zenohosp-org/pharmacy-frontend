@@ -223,6 +223,9 @@ export default function Dispensing() {
         timestamp: new Date().toLocaleString(),
       }, ...prev]);
       setSuccess(`Dispensed — Bill ${bill.billNumber} charged to patient's encounter`);
+      if (bill.hmsSyncStatus === 'FAILED') {
+        setError('Dispensed, but HMS sync failed — these items may still appear in the IPD queue. Refresh the queue shortly; they clear automatically once HMS is reachable.');
+      }
       setCart([]); setDoctorName(''); setNotes('');
       setTimeout(() => setSuccess(null), 8000);
     } catch (e) {
