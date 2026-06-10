@@ -147,6 +147,7 @@ export default function Layout() {
                                 {reportsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/sales-ledger" icon={History} label="Sales Ledger" />
+                                        <NavLink to="/pharmacy/dispensing/logs" icon={Pill} label="Dispensing Logs" />
                                         <NavLink to="/pharmacy/reports" icon={FileText} label="Reports" />
                                     </div>
                                 )}

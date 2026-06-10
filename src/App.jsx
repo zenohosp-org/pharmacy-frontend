@@ -15,6 +15,7 @@ const CounterSale = lazy(() => import('./pages/CounterSale'));
 const SalesLedger = lazy(() => import('./pages/SalesLedger'));
 const Dispensing = lazy(() => import('./pages/Dispensing'));
 const DispensingQueue = lazy(() => import('./pages/DispensingQueue'));
+const DispensingLog = lazy(() => import('./pages/DispensingLog'));
 
 // Reports module
 const ReportsIndex = lazy(() => import('./pages/reports/ReportsIndex'));
@@ -51,6 +52,7 @@ export default function App() {
             <Route path="/sales-ledger" element={<SalesLedger />} />
             <Route path="/pharmacy/dispensing" element={<Dispensing />} />
             <Route path="/pharmacy/dispensing/queue" element={<DispensingQueue />} />
+            <Route path="/pharmacy/dispensing/logs" element={<DispensingLog />} />
             <Route path="/pharmacy/reports" element={<ReportsIndex />} />
             <Route path="/pharmacy/reports/sales-summary" element={<SalesSummary />} />
             <Route path="/pharmacy/reports/sales-by-drug" element={<SalesByDrug />} />

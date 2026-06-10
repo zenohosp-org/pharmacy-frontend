@@ -186,6 +186,16 @@ export const getPatientPrescriptions = async (patientId, admissionId) => {
   return response.data || [];
 };
 
+export const getWardDispenseLogs = async () => {
+  try {
+    const response = await api.get('/api/pharmacy/dispensing/logs');
+    return response.data || [];
+  } catch {
+    console.warn('Ward dispense logs API not available');
+    return [];
+  }
+};
+
 export const createWardIssue = async (payload) => {
   const response = await api.post('/api/pharmacy/dispensing/ward-issue', payload);
   return response.data;
