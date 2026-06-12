@@ -13,9 +13,10 @@ export const defaultRackCode = (row, col) => `R${colLabel(col)}-${rowLabel(row)}
 
 export const cellKey = (row, col) => `${row}:${col}`;
 
-// Build a {row:col -> rack} map plus the placed/unplaced split and the grid size
-// needed to show every placed rack with at least one spare row/column to grow into.
-export function buildGrid(racks, minRows = 3, minCols = 4) {
+// Build a {row:col -> rack} map plus the placed/unplaced split and the grid size.
+// The grid is sized tightly to the placed racks (no large empty spare) so the
+// board reads as "the racks you created", not a sea of empty cells.
+export function buildGrid(racks) {
   const placed = new Map();
   const unplaced = [];
   let maxRow = -1;
@@ -34,7 +35,17 @@ export function buildGrid(racks, minRows = 3, minCols = 4) {
   return {
     placed,
     unplaced,
-    rows: Math.max(minRows, maxRow + 2),
-    cols: Math.max(minCols, maxCol + 2),
+    rows: Math.max(1, maxRow + 1),
+    cols: Math.max(1, maxCol + 1),
   };
+}
+
+// First free (row, col) within the placed bounding box, else a new column on row 0.
+export function firstFreeCell(grid) {
+  for (let r = 0; r < grid.rows; r++) {
+    for (let c = 0; c < grid.cols; c++) {
+      if (!grid.placed.has(cellKey(r, c))) return { row: r, col: c };
+    }
+  }
+  return { row: 0, col: grid.cols };
 }

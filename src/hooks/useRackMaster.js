@@ -1,20 +1,30 @@
 import { useState, useEffect, useCallback } from 'react';
-import { getRacks, deleteRack, getDefaultStoreId } from '../api/pharmacyClient';
+import { getRacks, deleteRack, getStockByRack, getDefaultStoreId } from '../api/pharmacyClient';
 
-// Rack Master list state: load racks for the default store, search filter, deactivate.
-// Create/update is handled by RackEditModal (its own form state).
+// Rack Master state: load racks + the stock currently stored in each rack
+// (grouped by rackId) so the board can show real contents. Create/update is
+// handled by RackEditModal.
 export default function useRackMaster() {
   const [racks, setRacks] = useState([]);
+  const [contentsByRack, setContentsByRack] = useState({});
   const [storeId, setStoreId] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
 
-  const fetchRacks = useCallback(async (sid) => {
+  const load = useCallback(async (sid) => {
     try {
       setLoading(true);
-      const data = await getRacks(sid);
-      setRacks(data);
+      const [rackData, stock] = await Promise.all([
+        getRacks(sid),
+        getStockByRack(sid).catch(() => []),
+      ]);
+      const grouped = {};
+      for (const b of stock) {
+        if (!b.rackId) continue;
+        (grouped[b.rackId] ||= []).push(b);
+      }
+      setRacks(rackData);
+      setContentsByRack(grouped);
       setError(null);
     } catch (e) {
       setError('Failed to load racks. Please refresh.');
@@ -28,17 +38,11 @@ export default function useRackMaster() {
     (async () => {
       const sid = await getDefaultStoreId();
       setStoreId(sid);
-      await fetchRacks(sid);
+      await load(sid);
     })();
-  }, [fetchRacks]);
+  }, [load]);
 
-  const refetch = useCallback(() => fetchRacks(storeId), [fetchRacks, storeId]);
-
-  const filteredRacks = racks.filter(r => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return r.code?.toLowerCase().includes(q) || r.name?.toLowerCase().includes(q);
-  });
+  const refetch = useCallback(() => load(storeId), [load, storeId]);
 
   const removeRack = async (id) => {
     if (!window.confirm('Deactivate this rack? Batches already assigned to it keep their reference.')) return;
@@ -51,9 +55,5 @@ export default function useRackMaster() {
     }
   };
 
-  return {
-    racks, filteredRacks, storeId, loading, error,
-    searchQuery, setSearchQuery,
-    removeRack, refetch,
-  };
+  return { racks, contentsByRack, storeId, loading, error, removeRack, refetch };
 }

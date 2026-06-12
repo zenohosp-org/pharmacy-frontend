@@ -6,24 +6,28 @@ import Alert from '../components/shared/Alert';
 import Button from '../components/ui/Button';
 import Card from '../components/ui/Card';
 import RackEditModal from '../components/rack-master/RackEditModal';
-import { buildGrid, cellKey, rowLabel, colLabel } from '../components/rack-master/rackGrid';
+import RackDetailModal from '../components/rack-master/RackDetailModal';
+import { buildGrid, firstFreeCell, cellKey, rowLabel, colLabel } from '../components/rack-master/rackGrid';
 import './RackMaster.css';
 
 export default function RackMaster() {
-  const { racks, storeId, loading, error, refetch } = useRackMaster();
+  const { racks, contentsByRack, storeId, loading, error, removeRack, refetch } = useRackMaster();
 
-  const [modal, setModal] = useState(null); // { rack } | { presetRow, presetCol } | null
-  const [extraRows, setExtraRows] = useState(0);
-  const [extraCols, setExtraCols] = useState(0);
+  const [detailRack, setDetailRack] = useState(null);
+  const [edit, setEdit] = useState(null); // { rack } | { presetRow, presetCol } | null
 
   const grid = useMemo(() => buildGrid(racks), [racks]);
-  const rows = grid.rows + extraRows;
-  const cols = grid.cols + extraCols;
+  const hasPlaced = grid.placed.size > 0;
 
-  const openCell = (row, col) => {
-    const rack = grid.placed.get(cellKey(row, col));
-    setModal(rack ? { rack } : { presetRow: row, presetCol: col });
+  const stockOf = (rackId) => contentsByRack[rackId] || [];
+
+  const openAdd = () => {
+    const { row, col } = firstFreeCell(grid);
+    setEdit({ presetRow: row, presetCol: col });
   };
+
+  const onEditFromDetail = (rack) => { setDetailRack(null); setEdit({ rack }); };
+  const onDeactivate = async (rack) => { setDetailRack(null); await removeRack(rack.id); };
 
   const tileClass = (rack) => {
     const cls = ['rack-tile'];
@@ -36,88 +40,101 @@ export default function RackMaster() {
     <div>
       <PageHeader
         title="Rack Master"
-        subtitle="Lay out your pharmacy racks as a grid. Columns are numbered (1, 2, 3…), rows are lettered (A, B, C…) — so column 1 / row A is rack R1-A. Click a cell to add or edit; codes stay editable."
+        subtitle="The racks you've created, laid out by column (1, 2, 3…) and row (A, B, C…). Click a rack to see the medicines stored in it."
+        actions={<Button onClick={openAdd}>+ Add Rack</Button>}
       />
 
       {error && <Alert tone="error" className="section-gap">{error}</Alert>}
 
-      <Card className="section-gap">
-        <div className="rack-legend">
-          <span className="rack-legend-item"><span className="rack-swatch rack-swatch--normal" /> Normal</span>
-          <span className="rack-legend-item"><span className="rack-swatch rack-swatch--cold" /> Cold storage</span>
-          <span className="rack-legend-item"><span className="rack-swatch rack-swatch--inactive" /> Inactive</span>
-          <span className="rack-legend-item"><span className="rack-swatch rack-swatch--empty" /> Empty (click to add)</span>
-        </div>
-
-        {loading ? (
-          <ContentLoader label="Loading racks…" />
-        ) : (
-          <>
-            <div className="rack-grid-scroll">
-              <div className="rack-grid" style={{ gridTemplateColumns: `var(--rack-rowhead) repeat(${cols}, 1fr)` }}>
-                <div className="rack-corner" />
-                {Array.from({ length: cols }, (_, c) => (
-                  <div key={`h${c}`} className="rack-colhead">{colLabel(c)}</div>
-                ))}
-
-                {Array.from({ length: rows }, (_, r) => (
-                  <Fragment key={`r${r}`}>
-                    <div className="rack-rowhead">{rowLabel(r)}</div>
-                    {Array.from({ length: cols }, (_, c) => {
-                      const rack = grid.placed.get(cellKey(r, c));
-                      return (
-                        <button
-                          key={`${r}-${c}`}
-                          className={rack ? tileClass(rack) : 'rack-cell-empty'}
-                          onClick={() => openCell(r, c)}
-                          title={rack ? `${rack.code}${rack.name ? ' · ' + rack.name : ''}` : `Add rack at column ${colLabel(c)}, row ${rowLabel(r)}`}
-                        >
-                          {rack ? (
-                            <>
-                              <span className="rack-tile-code">{rack.code}</span>
-                              {rack.name && <span className="rack-tile-name">{rack.name}</span>}
-                              {rack.rackType === 'COLD' && <span className="rack-tile-tag">❄ cold</span>}
-                              {!rack.isActive && <span className="rack-tile-tag">inactive</span>}
-                            </>
-                          ) : (
-                            <span className="rack-cell-plus">+</span>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </Fragment>
-                ))}
-              </div>
-            </div>
-
-            <div className="rack-grow">
-              <Button size="sm" variant="secondary" onClick={() => setExtraRows(n => n + 1)}>+ Row</Button>
-              <Button size="sm" variant="secondary" onClick={() => setExtraCols(n => n + 1)}>+ Column</Button>
-            </div>
-          </>
-        )}
-      </Card>
-
-      {grid.unplaced.length > 0 && (
-        <Card title="Unplaced racks" className="section-gap">
-          <p className="rack-unplaced-hint">These racks have no grid position yet. Edit one to give it a row &amp; column.</p>
-          <div className="rack-unplaced">
-            {grid.unplaced.map(r => (
-              <button key={r.id} className="rack-chip" onClick={() => setModal({ rack: r })}>
-                <strong>{r.code}</strong>{r.name ? ` · ${r.name}` : ''}
-              </button>
-            ))}
+      {loading ? (
+        <ContentLoader label="Loading racks…" />
+      ) : !hasPlaced && grid.unplaced.length === 0 ? (
+        <Card className="section-gap">
+          <div className="rack-empty-state">
+            <p>No racks yet.</p>
+            <Button onClick={openAdd}>+ Add your first rack</Button>
           </div>
         </Card>
+      ) : (
+        <>
+          {hasPlaced && (
+            <Card className="section-gap">
+              <div className="rack-legend">
+                <span className="rack-legend-item"><span className="rack-swatch rack-swatch--normal" /> Normal</span>
+                <span className="rack-legend-item"><span className="rack-swatch rack-swatch--cold" /> Cold storage</span>
+                <span className="rack-legend-item"><span className="rack-swatch rack-swatch--inactive" /> Inactive</span>
+              </div>
+
+              <div className="rack-grid-scroll">
+                <div className="rack-grid" style={{ gridTemplateColumns: `var(--rack-rowhead) repeat(${grid.cols}, 1fr)` }}>
+                  <div className="rack-corner" />
+                  {Array.from({ length: grid.cols }, (_, c) => (
+                    <div key={`h${c}`} className="rack-colhead">{colLabel(c)}</div>
+                  ))}
+
+                  {Array.from({ length: grid.rows }, (_, r) => (
+                    <Fragment key={`r${r}`}>
+                      <div className="rack-rowhead">{rowLabel(r)}</div>
+                      {Array.from({ length: grid.cols }, (_, c) => {
+                        const rack = grid.placed.get(cellKey(r, c));
+                        if (!rack) return <div key={`${r}-${c}`} className="rack-cell-blank" />;
+                        const items = stockOf(rack.id);
+                        const units = items.reduce((s, b) => s + (parseFloat(b.currentUnits) || 0), 0);
+                        return (
+                          <button
+                            key={`${r}-${c}`}
+                            className={tileClass(rack)}
+                            onClick={() => setDetailRack(rack)}
+                            title={`${rack.code}${rack.name ? ' · ' + rack.name : ''} — click to view contents`}
+                          >
+                            <span className="rack-tile-code">{rack.code}</span>
+                            {rack.name && <span className="rack-tile-name">{rack.name}</span>}
+                            <span className="rack-tile-badge">
+                              {items.length} batch{items.length === 1 ? '' : 'es'}{units ? ` · ${units.toFixed(0)}u` : ''}
+                            </span>
+                            {rack.rackType === 'COLD' && <span className="rack-tile-tag">❄ cold</span>}
+                            {!rack.isActive && <span className="rack-tile-tag">inactive</span>}
+                          </button>
+                        );
+                      })}
+                    </Fragment>
+                  ))}
+                </div>
+              </div>
+            </Card>
+          )}
+
+          {grid.unplaced.length > 0 && (
+            <Card title="Unplaced racks" className="section-gap">
+              <p className="rack-unplaced-hint">These racks have no grid position yet. Open one and set its row &amp; column.</p>
+              <div className="rack-unplaced">
+                {grid.unplaced.map(r => (
+                  <button key={r.id} className="rack-chip" onClick={() => setDetailRack(r)}>
+                    <strong>{r.code}</strong>{r.name ? ` · ${r.name}` : ''} · {stockOf(r.id).length} batches
+                  </button>
+                ))}
+              </div>
+            </Card>
+          )}
+        </>
       )}
 
+      <RackDetailModal
+        open={!!detailRack}
+        rack={detailRack}
+        contents={detailRack ? stockOf(detailRack.id) : []}
+        onClose={() => setDetailRack(null)}
+        onEdit={onEditFromDetail}
+        onDeactivate={onDeactivate}
+      />
+
       <RackEditModal
-        open={!!modal}
-        rack={modal?.rack}
-        presetRow={modal?.presetRow}
-        presetCol={modal?.presetCol}
+        open={!!edit}
+        rack={edit?.rack}
+        presetRow={edit?.presetRow}
+        presetCol={edit?.presetCol}
         storeId={storeId}
-        onClose={() => setModal(null)}
+        onClose={() => setEdit(null)}
         onSaved={refetch}
       />
     </div>
