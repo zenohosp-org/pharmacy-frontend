@@ -1,6 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { lazy, Suspense } from 'react';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './components/ui/Toast';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import ContentLoader from './components/shared/ContentLoader';
@@ -36,6 +37,7 @@ const fullscreen = (el) => <Suspense fallback={<ContentLoader fullscreen />}>{el
 export default function App() {
   return (
     <AuthProvider>
+      <ToastProvider>
       <Router>
         <Routes>
           <Route path="/login" element={fullscreen(<Login />)} />
@@ -71,6 +73,7 @@ export default function App() {
           <Route path="*" element={<Navigate to="/pharmacy/dashboard" />} />
         </Routes>
       </Router>
+      </ToastProvider>
     </AuthProvider>
   );
 }

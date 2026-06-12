@@ -193,7 +193,9 @@ export default function Layout() {
                 <Header />
                 <main className="main-content">
                     <Suspense fallback={<ContentLoader />}>
-                        <Outlet />
+                        <div className="page-enter" key={location.pathname}>
+                            <Outlet />
+                        </div>
                     </Suspense>
                 </main>
             </div>

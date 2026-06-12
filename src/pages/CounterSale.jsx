@@ -4,6 +4,7 @@ import { createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClien
 import useDrugCatalog from '../hooks/useDrugCatalog';
 import useBatchPicker from '../hooks/useBatchPicker';
 import useCart from '../hooks/useCart';
+import { useToast } from '../components/ui/Toast';
 import PageHeader from '../components/shared/PageHeader';
 import Alert from '../components/shared/Alert';
 import DrugSearchCard from '../components/dispensing/DrugSearchCard';
@@ -19,6 +20,7 @@ export default function CounterSale() {
   const { drugs, filterDrug } = useDrugCatalog();
   const { pending, setPending, loadBatches, clearPending } = useBatchPicker();
   const { cart, addToCart, updateItem, removeItem, clearCart, totals, requiresDoctor } = useCart(lineRate);
+  const toast = useToast();
 
   const [drugSearch, setDrugSearch] = useState('');
   const [alternatives, setAlternatives] = useState([]);
@@ -27,7 +29,6 @@ export default function CounterSale() {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [success, setSuccess] = useState(null);
   const [completedSales, setCompletedSales] = useState([]);
 
   const handleDrugSelect = async (drug) => {
@@ -101,7 +102,7 @@ export default function CounterSale() {
       setError('Doctor name required for Schedule H1/X drugs');
       return;
     }
-    setLoading(true); setError(null); setSuccess(null);
+    setLoading(true); setError(null);
     try {
       const payload = {
         patientPhone: patientPhone || null,
@@ -126,10 +127,10 @@ export default function CounterSale() {
         items: [...cart], ...totals,
       };
       setCompletedSales(p => [record, ...p]);
-      setSuccess(`✓ Bill ${bill.billNumber} created`);
+      toast(`Bill ${bill.billNumber} created`, 'success');
       clearCart(); setPatientPhone(''); setDoctorName('');
-      setTimeout(() => setSuccess(null), 6000);
     } catch (e) {
+      toast('Billing failed: ' + e.message, 'error');
       setError('Billing failed: ' + e.message);
     } finally {
       setLoading(false);
@@ -153,7 +154,6 @@ export default function CounterSale() {
       />
 
       {error && <Alert tone="error" className="section-gap">{error}</Alert>}
-      {success && <Alert tone="success" className="section-gap">{success}</Alert>}
 
       <div className="cs-grid">
         {/* ── LEFT ── */}

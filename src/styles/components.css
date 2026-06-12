@@ -28,19 +28,41 @@
   pointer-events: none;
 }
 
+.btn:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
 .btn-primary {
   background-color: var(--color-primary);
   color: var(--color-white);
-  box-shadow: 0 1px 3px rgba(37, 99, 235, 0.25);
+  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.28);
 }
 
 .btn-primary:hover:not(:disabled) {
   background-color: var(--color-primary-dark);
   transform: translateY(-1px);
+  box-shadow: var(--shadow-primary);
 }
 
-.btn-primary:active:not(:disabled) {
-  transform: translateY(0);
+/* Gradient hero CTA — for primary actions like New Sale / Complete Sale */
+.btn-gradient {
+  background-image: var(--gradient-brand);
+  color: var(--color-white);
+  box-shadow: var(--shadow-primary);
+}
+.btn-gradient:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.05);
+}
+
+/* Soft tinted secondary — calmer than the white-bordered secondary */
+.btn-soft {
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+  border: 1px solid transparent;
+}
+.btn-soft:hover:not(:disabled) {
+  background-color: #DCE7FE;
 }
 
 .btn-secondary {
@@ -104,9 +126,20 @@
    ════════════════════════════════════════ */
 .card {
   background-color: var(--color-bg-card);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-xl);
   border: 1px solid var(--color-gray-200);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
+  transition: box-shadow var(--transition-base), transform var(--transition-base);
+}
+
+/* Interactive cards (clickable tiles) lift on hover */
+.card--interactive {
+  cursor: pointer;
+}
+.card--interactive:hover {
+  box-shadow: var(--shadow-lg);
+  transform: translateY(-3px);
 }
 
 .card-header {
@@ -211,16 +244,22 @@
   font-family: var(--font-primary);
   font-size: var(--fs-sm);
   color: var(--color-gray-900);
-  background-color: var(--color-gray-50);
-  transition: all var(--transition-fast);
+  background-color: var(--color-white);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background-color var(--transition-fast);
+}
+
+.form-input:hover:not(:focus):not(:disabled),
+.form-select:hover:not(:focus):not(:disabled),
+.form-textarea:hover:not(:focus):not(:disabled) {
+  border-color: var(--color-gray-300);
 }
 
 .form-input:focus,
 .form-select:focus,
 .form-textarea:focus {
   outline: none;
-  border-color: #000000;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  border-color: var(--color-primary);
+  box-shadow: var(--ring-primary);
   background-color: var(--color-white);
 }
 
@@ -264,6 +303,9 @@
 .table thead {
   background-color: var(--color-gray-50);
   border-bottom: 1px solid var(--color-gray-200);
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 .table thead th {
@@ -288,8 +330,12 @@
   border-bottom: none;
 }
 
+.table tbody tr {
+  transition: background-color var(--transition-fast);
+}
+
 .table tbody tr:hover {
-  background-color: #f9f9f9;
+  background-color: var(--color-primary-subtle);
 }
 
 /* ════════════════════════════════════════
@@ -323,7 +369,7 @@
   overflow-y: auto;
   box-shadow: var(--shadow-xl);
   z-index: var(--z-modal);
-  animation: modalSlideUp var(--transition-base) cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: modalSlideUp 280ms var(--ease-spring);
   border: 1px solid var(--color-gray-200);
 }
 

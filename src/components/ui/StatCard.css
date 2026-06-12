@@ -1,12 +1,52 @@
 .stat-card {
-    padding: 20px 24px;
+    padding: 20px 22px;
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-4);
+    position: relative;
+    overflow: hidden;
+    animation: fadeSlideUp 380ms var(--ease-spring) both;
 }
 
-.stat-card-row {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+/* Left accent stripe tinted by tone */
+.stat-card::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: var(--color-gray-300);
 }
+.stat-card--success::before { background: var(--gradient-success); }
+.stat-card--danger::before  { background: var(--gradient-danger); }
+.stat-card--warning::before { background: var(--gradient-warning); }
+.stat-card--info::before,
+.stat-card--default::before { background: var(--gradient-brand); }
+
+.stat-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+/* Icon chip */
+.stat-card-chip {
+    width: 46px;
+    height: 46px;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--color-primary-subtle);
+    color: var(--color-primary);
+}
+.stat-card--success .stat-card-chip { background: var(--color-success-subtle); color: var(--color-success-dark); }
+.stat-card--danger  .stat-card-chip { background: var(--color-error-subtle);   color: var(--color-error-dark); }
+.stat-card--warning .stat-card-chip { background: var(--color-warning-subtle); color: var(--color-warning-dark); }
+.stat-card--info    .stat-card-chip { background: var(--color-info-subtle);    color: var(--color-info-dark); }
+
+.stat-card-body { min-width: 0; }
 
 .stat-card-label {
     font-size: var(--fs-xs);
@@ -14,27 +54,24 @@
     color: var(--color-gray-500);
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    margin-bottom: var(--spacing-2);
+    margin-bottom: 4px;
 }
 
 .stat-card-value {
-    font-size: 28px;
+    font-size: 26px;
     font-weight: 800;
     line-height: 1.1;
+    letter-spacing: -0.02em;
 }
 
 .stat-card-value.tone-default { color: var(--color-gray-900); }
 .stat-card-value.tone-success { color: var(--color-success-dark); }
 .stat-card-value.tone-danger  { color: var(--color-error-dark); }
 .stat-card-value.tone-warning { color: var(--color-warning-dark); }
+.stat-card-value.tone-info    { color: var(--color-info-dark); }
 
 .stat-card-sub {
-    font-size: var(--fs-sm);
+    font-size: var(--fs-xs);
     color: var(--color-gray-400);
-    margin-top: var(--spacing-1);
-}
-
-.stat-card-icon {
-    font-size: 28px;
-    line-height: 1;
+    margin-top: 4px;
 }

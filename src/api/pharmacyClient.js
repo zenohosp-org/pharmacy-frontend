@@ -13,11 +13,25 @@ const api = axios.create({
   withCredentials: true,
 });
 
+// Inject the mock JWT on every request when mock auth is enabled (local dev only)
+const isMockAuth = import.meta.env.VITE_DEV_MOCK_AUTH === 'true' && import.meta.env.VITE_MOCK_JWT;
+const attachMockJwt = (config) => {
+  config.headers.Authorization = `Bearer ${import.meta.env.VITE_MOCK_JWT}`;
+  return config;
+};
+if (isMockAuth) {
+  api.interceptors.request.use(attachMockJwt);
+  inventoryApi.interceptors.request.use(attachMockJwt);
+}
+
 api.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401 || error.response?.status === 403) {
-      window.location.href = `${API_BASE_URL}/oauth2/authorization/directory`;
+      // In mock-auth local dev, never bounce to the (prod) SSO login.
+      if (!isMockAuth) {
+        window.location.href = `${API_BASE_URL}/oauth2/authorization/directory`;
+      }
     }
     return Promise.reject(error);
   }

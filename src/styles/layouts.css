@@ -64,9 +64,16 @@
 .sidebar-brand-text {
   font-size: 18px;
   font-weight: 800;
-  color: #020617;
   letter-spacing: -0.03em;
   white-space: nowrap;
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.sidebar-brand-icon {
+  color: var(--color-primary);
 }
 
 /* ── Sidebar Nav ── */
@@ -116,19 +123,36 @@
 }
 
 .sidebar-link:hover {
-  background-color: #f3f4f6;
-  color: #000000;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+}
+
+.sidebar-link:hover .sidebar-icon {
+  color: var(--color-primary);
 }
 
 .sidebar-link.active {
-  background-color: #e4e4e4;
-  color: #020617;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
   margin: 0px 0px 0px 12px;
-  font-weight: 500;
+  font-weight: 600;
+  position: relative;
+}
+
+.sidebar-link.active::before {
+  content: '';
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  border-radius: var(--radius-full);
+  background: var(--gradient-brand);
 }
 
 .sidebar-link.active .sidebar-icon {
-  color: #020617;
+  color: var(--color-primary);
 }
 
 .sidebar-icon {
@@ -156,8 +180,11 @@
 }
 
 .sidebar-submenu-toggle:hover {
-  background-color: #f3f4f6;
-  color: #000000;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+}
+.sidebar-submenu-toggle:hover .sidebar-icon {
+  color: var(--color-primary);
 }
 
 .sidebar-submenu-inner {
@@ -180,9 +207,12 @@
 }
 
 .sidebar-submenu-link.active {
-  background-color: #e4e4e4;
-  color: #020617;
-  font-weight: 500;
+  background-color: var(--color-primary-subtle);
+  color: var(--color-primary-dark);
+  font-weight: 600;
+}
+.sidebar-submenu-link.active .sidebar-icon {
+  color: var(--color-primary);
 }
 
 /* ── Sidebar Footer ── */
@@ -302,7 +332,7 @@
   min-height: 0;
   overflow-y: auto;
   padding: var(--spacing-8) var(--spacing-8) var(--spacing-8);
-  background-color: #f9f9f9;
+  background: var(--color-bg-canvas);
 }
 
 /* ════════════════════════════════════════

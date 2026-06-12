@@ -14,6 +14,29 @@
 
 .section-gap { margin-bottom: var(--spacing-6); }
 
+/* Page mount transition — keyed on route in Layout so it re-plays per page */
+.page-enter {
+    animation: fadeSlideUp 320ms var(--transition-base) both;
+}
+
+/* Shimmer skeleton — drop-in placeholder blocks while data loads */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: var(--color-gray-100);
+    border-radius: var(--radius-md);
+}
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    background-size: 480px 100%;
+    animation: shimmer 1.3s infinite;
+}
+.skeleton-text { height: 12px; margin-bottom: 8px; }
+.skeleton-title { height: 20px; width: 40%; margin-bottom: 14px; }
+
 /* Reusable two-line table cell helpers */
 .cell-strong {
     font-weight: var(--fw-semibold);

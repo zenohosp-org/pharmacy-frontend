@@ -39,8 +39,8 @@
 }
 
 .quick-action {
-    padding: var(--spacing-4);
-    border-radius: var(--radius-lg);
+    padding: var(--spacing-4) var(--spacing-5);
+    border-radius: var(--radius-xl);
     background: var(--color-white);
     border: 1px solid var(--color-gray-200);
     box-shadow: var(--shadow-sm);
@@ -48,11 +48,12 @@
     align-items: center;
     gap: var(--spacing-3);
     text-decoration: none;
-    transition: box-shadow var(--transition-fast), border-color var(--transition-fast);
+    transition: box-shadow var(--transition-base), border-color var(--transition-base), transform var(--transition-base);
 }
 
 .quick-action:hover {
-    box-shadow: var(--shadow-md);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-3px);
 }
 
 .quick-action--success:hover { border-color: var(--color-success-light); }
@@ -60,12 +61,41 @@
 .quick-action--info:hover { border-color: var(--color-info-light); }
 
 .quick-action-icon {
-    font-size: 22px;
-    line-height: 1;
+    width: 42px;
+    height: 42px;
+    flex-shrink: 0;
+    border-radius: var(--radius-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.quick-action--success .quick-action-icon { background: var(--color-success-subtle); color: var(--color-success-dark); }
+.quick-action--primary .quick-action-icon { background: var(--color-primary-subtle); color: var(--color-primary-dark); }
+.quick-action--info .quick-action-icon    { background: var(--color-info-subtle);    color: var(--color-info-dark); }
+
+.quick-action-text {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
 }
 
 .quick-action-label {
     font-weight: var(--fw-semibold);
-    font-size: var(--fs-sm);
-    color: var(--color-gray-800);
+    font-size: var(--fs-base);
+    color: var(--color-gray-900);
+}
+
+.quick-action-desc {
+    font-size: var(--fs-xs);
+    color: var(--color-gray-500);
+}
+
+.quick-action-arrow {
+    margin-left: auto;
+    color: var(--color-gray-300);
+    transition: transform var(--transition-base), color var(--transition-base);
+}
+.quick-action:hover .quick-action-arrow {
+    color: var(--color-primary);
+    transform: translateX(3px);
 }
