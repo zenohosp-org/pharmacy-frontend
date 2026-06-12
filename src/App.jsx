@@ -11,6 +11,7 @@ const SsoCallback = lazy(() => import('./pages/SsoCallback'));
 const Dashboard = lazy(() => import('./pages/Dashboard'));
 const DrugMaster = lazy(() => import('./pages/DrugMaster'));
 const StockDashboard = lazy(() => import('./pages/StockDashboard'));
+const RackMaster = lazy(() => import('./pages/RackMaster'));
 const CounterSale = lazy(() => import('./pages/CounterSale'));
 const SalesLedger = lazy(() => import('./pages/SalesLedger'));
 const Dispensing = lazy(() => import('./pages/Dispensing'));
@@ -47,6 +48,7 @@ export default function App() {
             <Route path="/pharmacy/dashboard" element={<Dashboard />} />
             <Route path="/pharmacy/drugs" element={<DrugMaster />} />
             <Route path="/pharmacy/stock" element={<StockDashboard />} />
+            <Route path="/pharmacy/racks" element={<RackMaster />} />
             <Route path="/pharmacy/counter-sale" element={<CounterSale />} />
             <Route path="/pharmacy/sales-ledger" element={<SalesLedger />} />
             <Route path="/sales-ledger" element={<SalesLedger />} />

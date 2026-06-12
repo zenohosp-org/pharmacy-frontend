@@ -128,6 +128,39 @@ export const getReorderAlerts = async () => {
   return response.data;
 };
 
+export const updateBatch = async (batchId, payload) => {
+  const response = await api.put(`/api/pharmacy/stock/batches/${batchId}`, payload);
+  return response.data;
+};
+
+export const getStockByRack = async (storeId) => {
+  const url = storeId ? `/api/pharmacy/stock/by-rack?storeId=${storeId}` : '/api/pharmacy/stock/by-rack';
+  const response = await api.get(url);
+  return response.data;
+};
+
+// ── Racks ──
+export const getRacks = async (storeId) => {
+  const url = storeId ? `/api/pharmacy/racks?storeId=${storeId}` : '/api/pharmacy/racks';
+  const response = await api.get(url);
+  return response.data;
+};
+
+export const createRack = async (payload) => {
+  const response = await api.post('/api/pharmacy/racks', payload);
+  return response.data;
+};
+
+export const updateRack = async (id, payload) => {
+  const response = await api.put(`/api/pharmacy/racks/${id}`, payload);
+  return response.data;
+};
+
+export const deleteRack = async (id) => {
+  const response = await api.delete(`/api/pharmacy/racks/${id}`);
+  return response.data;
+};
+
 export const createCounterSale = async (payload) => {
   const response = await api.post('/api/pharmacy/dispensing/counter-sale', payload);
   return response.data;

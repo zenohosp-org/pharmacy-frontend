@@ -133,6 +133,18 @@ export default function Layout() {
                             </Link>
                         </li>
 
+                        {/* Rack Master */}
+                        <li>
+                            <Link
+                                to="/pharmacy/racks"
+                                className={`sidebar-link ${isActive('/pharmacy/racks') ? 'active' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <LayoutGrid className="sidebar-icon" size={18} />
+                                Rack Master
+                            </Link>
+                        </li>
+
                         {/* Reports & Ledger Section */}
                         <li className="sidebar-section">
                             <div className="sidebar-section-title">Reports</div>

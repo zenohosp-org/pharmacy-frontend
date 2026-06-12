@@ -33,3 +33,9 @@
     margin: var(--spacing-3) 0 0;
     padding-left: 20px;
 }
+
+.batch-edit-hint {
+    margin-top: var(--spacing-3);
+    font-size: var(--fs-xs);
+    color: var(--color-text-muted, #6b7280);
+}
