@@ -333,3 +333,11 @@
 .cs-recent {
     margin-top: var(--spacing-6);
 }
+
+/* Batch picker shown on a line when the drug has >1 in-stock batch */
+.cs-batch-select {
+  margin-top: 0.35rem;
+  width: 100%;
+  font-size: var(--fs-xs, 0.72rem);
+  padding: 0.25rem 0.4rem;
+}

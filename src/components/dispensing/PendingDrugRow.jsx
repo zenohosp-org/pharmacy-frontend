@@ -21,7 +21,7 @@ export default function PendingDrugRow({ pending, pendingBatches, onChange, onAd
             >
               {pendingBatches.map(b => (
                 <option key={b.id} value={b.id}>
-                  {b.batchNumber} · {expiryLabel(b.expiryDate)} · ₹{fmt(b.sellingPrice)}
+                  {b.batchNumber} · {expiryLabel(b.expiryDate)} · {b.currentUnits ?? 0}u · ₹{fmt(b.sellingPrice)}
                 </option>
               ))}
             </select>

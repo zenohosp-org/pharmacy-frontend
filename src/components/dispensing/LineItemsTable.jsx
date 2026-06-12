@@ -1,7 +1,26 @@
 import Card from '../ui/Card';
 import UomToggle from './UomToggle';
-import { fmt } from '../../utils/format';
+import { fmt, expiryLabel } from '../../utils/format';
 import { lineRate } from '../../utils/counterSale';
+
+// Batch picker for a line — only rendered when the drug has more than one in-stock batch.
+function BatchSelect({ item, onChange }) {
+  const batches = item.batches || [];
+  if (batches.length <= 1) return null;
+  return (
+    <select
+      className="form-select cs-batch-select"
+      value={item.batch?.id ?? ''}
+      onChange={(e) => onChange({ ...item, batch: batches.find(b => b.id === e.target.value) })}
+    >
+      {batches.map(b => (
+        <option key={b.id} value={b.id}>
+          {b.batchNumber} · exp {expiryLabel(b.expiryDate)} · {b.currentUnits ?? 0}u · ₹{fmt(b.sellingPrice)}
+        </option>
+      ))}
+    </select>
+  );
+}
 
 // Counter-sale line items: a "pending" row (drug just picked) followed by the
 // confirmed cart rows, each with GST/qty steppers, discount and per-line total.
@@ -38,6 +57,7 @@ export default function LineItemsTable({ pending, cart, onPendingChange, onClear
                 <button onClick={onClearPending} className="cs-product-clear">×</button>
               )}
               <UomToggle item={pending} onChange={onPendingChange} />
+              <BatchSelect item={pending} onChange={onPendingChange} />
             </div>
 
             <div className="cs-stepper">
@@ -77,6 +97,7 @@ export default function LineItemsTable({ pending, cart, onPendingChange, onClear
               <div className="cs-cart-name">
                 {item.drugName}
                 <UomToggle item={item} onChange={onCartItemChange} />
+                <BatchSelect item={item} onChange={onCartItemChange} />
               </div>
               <div className="cs-stepper">
                 <button className="cs-stepper-btn" onClick={() => onCartItemChange({ ...item, gstRate: Math.max(0, (item.gstRate || 0) - 0.5) })}>−</button>

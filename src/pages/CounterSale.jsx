@@ -60,6 +60,7 @@ export default function CounterSale() {
         drugName: drug.brandName,
         drug,
         batch: sorted[0] ?? null,
+        batches: sorted,
         qty: '',
         uom: 'UNIT',
         gstRate: 9,
@@ -147,7 +148,7 @@ export default function CounterSale() {
     <div>
       <PageHeader
         title="Counter Sale"
-        subtitle="Search drug → batch auto-selected (FEFO) → enter qty → add"
+        subtitle="Search drug → batch auto-selected (FEFO, change it from the dropdown if needed) → enter qty → add"
         actions={<Link to="/pharmacy/sales-ledger" className="btn btn-secondary">Sales Ledger</Link>}
       />
 
