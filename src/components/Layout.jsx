@@ -20,8 +20,14 @@ const EXTERNAL_APPS = [
 export default function Layout() {
     const location = useLocation();
     const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [dispensingOpen, setDispensingOpen] = useState(
+        location.pathname.startsWith('/pharmacy/dispensing')
+    );
+    const [inventoryOpen, setInventoryOpen] = useState(
+        ['/pharmacy/stock', '/pharmacy/racks', '/pharmacy/drugs'].some(p => location.pathname.startsWith(p))
+    );
     const [reportsOpen, setReportsOpen] = useState(
-        ['/pharmacy/sales-ledger', '/pharmacy/reports'].includes(location.pathname)
+        ['/pharmacy/sales-ledger', '/pharmacy/reports'].some(p => location.pathname.startsWith(p))
     );
 
     const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
@@ -86,8 +92,10 @@ export default function Layout() {
                             </Link>
                         </li>
 
-                        {/* Counter Sale */}
-                        <li>
+                        {/* Dispensing Section — Counter Sale (anchor) + IPD collapsible */}
+                        <li className="sidebar-section">
+                            <div className="sidebar-section-title">Dispensing</div>
+
                             <Link
                                 to="/pharmacy/counter-sale"
                                 className={`sidebar-link ${isActive('/pharmacy/counter-sale') ? 'active' : ''}`}
@@ -96,53 +104,42 @@ export default function Layout() {
                                 <ShoppingCart className="sidebar-icon" size={18} />
                                 Counter Sale
                             </Link>
+
+                            <div className="sidebar-subsection">
+                                <CollapseToggle
+                                    open={dispensingOpen}
+                                    onToggle={() => setDispensingOpen(o => !o)}
+                                    icon={Pill}
+                                    label="IPD Dispensing"
+                                />
+                                {dispensingOpen && (
+                                    <div className="sidebar-submenu">
+                                        <NavLink to="/pharmacy/dispensing/queue" icon={Pill} label="Queue" />
+                                        <NavLink to="/pharmacy/dispensing/logs" icon={History} label="Dispensing Logs" />
+                                    </div>
+                                )}
+                            </div>
                         </li>
 
-                        {/* IPD Dispensing */}
-                        <li>
-                            <Link
-                                to="/pharmacy/dispensing/queue"
-                                className={`sidebar-link ${isActive('/pharmacy/dispensing/queue') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <Pill className="sidebar-icon" size={18} />
-                                IPD Dispensing
-                            </Link>
-                        </li>
+                        {/* Inventory Section — Stock (anchor) + Racks + Drug Master */}
+                        <li className="sidebar-section">
+                            <div className="sidebar-section-title">Inventory</div>
 
-                        {/* Stock Dashboard */}
-                        <li>
-                            <Link
-                                to="/pharmacy/stock"
-                                className={`sidebar-link ${isActive('/pharmacy/stock') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <LayoutDashboard className="sidebar-icon" size={18} />
-                                Stock Dashboard
-                            </Link>
-                        </li>
-
-                        <li>
-                            <Link
-                                to="/pharmacy/drugs"
-                                className={`sidebar-link ${isActive('/pharmacy/drugs') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <Pill className="sidebar-icon" size={18} />
-                                Drug Master
-                            </Link>
-                        </li>
-
-                        {/* Rack Master */}
-                        <li>
-                            <Link
-                                to="/pharmacy/racks"
-                                className={`sidebar-link ${isActive('/pharmacy/racks') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <LayoutGrid className="sidebar-icon" size={18} />
-                                Rack Master
-                            </Link>
+                            <div className="sidebar-subsection">
+                                <CollapseToggle
+                                    open={inventoryOpen}
+                                    onToggle={() => setInventoryOpen(o => !o)}
+                                    icon={Boxes}
+                                    label="Stock"
+                                />
+                                {inventoryOpen && (
+                                    <div className="sidebar-submenu">
+                                        <NavLink to="/pharmacy/stock" icon={Boxes} label="Stock Dashboard" />
+                                        <NavLink to="/pharmacy/racks" icon={LayoutGrid} label="Rack Master" />
+                                        <NavLink to="/pharmacy/drugs" icon={Pill} label="Drug Master" />
+                                    </div>
+                                )}
+                            </div>
                         </li>
 
                         {/* Reports & Ledger Section */}
@@ -159,7 +156,6 @@ export default function Layout() {
                                 {reportsOpen && (
                                     <div className="sidebar-submenu">
                                         <NavLink to="/pharmacy/sales-ledger" icon={History} label="Sales Ledger" />
-                                        <NavLink to="/pharmacy/dispensing/logs" icon={Pill} label="Dispensing Logs" />
                                         <NavLink to="/pharmacy/reports" icon={FileText} label="Reports" />
                                     </div>
                                 )}
