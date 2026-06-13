@@ -73,19 +73,20 @@
 
 .drug-schedule-badge {
   display: inline-block;
-  padding: var(--spacing-1) var(--spacing-2);
+  padding: 3px 10px;
   border-radius: var(--radius-full);
-  color: white;
   font-size: var(--fs-xs);
-  font-weight: var(--fw-semibold);
+  font-weight: var(--fw-bold);
   text-align: center;
+  letter-spacing: 0.02em;
 }
 
-.drug-schedule-badge--OTC { background-color: #4CAF50; }
-.drug-schedule-badge--H { background-color: #FF9800; }
-.drug-schedule-badge--H1 { background-color: #F44336; }
-.drug-schedule-badge--X { background-color: #B71C1C; }
-.drug-schedule-badge--default { background-color: #999999; }
+/* Soft tinted pills to match the new palette */
+.drug-schedule-badge--OTC { background: var(--color-success-subtle); color: var(--color-success-dark); }
+.drug-schedule-badge--H   { background: var(--color-warning-subtle); color: var(--color-warning-dark); }
+.drug-schedule-badge--H1  { background: var(--color-error-subtle);   color: var(--color-error-dark); }
+.drug-schedule-badge--X   { background: var(--color-error-dark);     color: #fff; }
+.drug-schedule-badge--default { background: var(--color-gray-100);   color: var(--color-gray-600); }
 
 .action-buttons {
   display: flex;

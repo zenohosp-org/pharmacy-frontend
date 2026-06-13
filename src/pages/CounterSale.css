@@ -249,35 +249,40 @@
 
 .cs-totals {
     background: var(--color-gray-50);
-    border-radius: var(--radius-md);
-    padding: 12px 14px;
+    border-radius: var(--radius-lg);
+    padding: 12px 14px 0;
     border: 1px solid var(--color-gray-200);
     margin-bottom: var(--spacing-4);
     font-size: var(--fs-sm);
+    overflow: hidden;
 }
 
 .cs-totals-row {
     display: flex;
     justify-content: space-between;
-    margin-bottom: 6px;
+    margin-bottom: 8px;
 }
 
 .cs-totals-label {
     color: var(--color-gray-500);
 }
 
+/* Grand total — full-bleed gradient band at the bottom of the totals box */
 .cs-totals-grand {
     display: flex;
     justify-content: space-between;
-    border-top: 1px solid var(--color-gray-200);
-    padding-top: 8px;
-    margin-top: 4px;
+    align-items: center;
+    margin: 10px -14px 0;
+    padding: 13px 16px;
+    background: var(--gradient-success);
+    color: #fff;
     font-size: var(--fs-xl);
     font-weight: 800;
+    letter-spacing: -0.01em;
 }
 
 .cs-totals-grand-value {
-    color: var(--color-success-dark);
+    color: #fff;
 }
 
 .cs-pay {
@@ -328,6 +333,19 @@
 
 .cs-field {
     margin-bottom: 14px;
+}
+
+/* Prominent gradient checkout CTA */
+.cs-checkout {
+    background-image: var(--gradient-success);
+    box-shadow: var(--shadow-success);
+    padding-top: 13px;
+    padding-bottom: 13px;
+    font-size: var(--fs-base);
+}
+.cs-checkout:hover:not(:disabled) {
+    filter: brightness(1.05);
+    transform: translateY(-1px);
 }
 
 .cs-recent {

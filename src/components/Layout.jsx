@@ -6,7 +6,9 @@ import {
     LayoutDashboard, ShoppingCart, History,
     ChevronDown, ChevronRight, Pill, FileText,
     Menu as MenuIcon, X as XIcon,
-    Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight
+    Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight,
+    ClipboardList, Receipt, CreditCard, TrendingUp,
+    PieChart, AlertTriangle, ArrowLeftRight, PackageX, Coins, Settings
 } from 'lucide-react';
 
 const EXTERNAL_APPS = [
@@ -17,22 +19,62 @@ const EXTERNAL_APPS = [
     { label: 'Assets',    href: 'https://asset.zenohosp.com',     icon: LayoutGrid },
 ];
 
+const WARD_LINKS = [
+    { to: '/pharmacy/dispensing/queue', label: 'Pending Prescriptions', icon: ClipboardList },
+    { to: '/pharmacy/dispensing/logs',  label: 'Dispensing History',    icon: History },
+];
+const SALES_REPORT_LINKS = [
+    { to: '/pharmacy/reports/sales-summary', label: 'Sales Summary',     icon: FileText },
+    { to: '/pharmacy/reports/sales-by-drug', label: 'Sales by Drug',     icon: Pill },
+    { to: '/pharmacy/reports/payments',      label: 'Payment Breakdown', icon: CreditCard },
+    { to: '/pharmacy/reports/top-sellers',   label: 'Top Sellers',       icon: TrendingUp },
+    { to: '/pharmacy/reports/drug-history',  label: 'Drug History',      icon: History },
+];
+const STOCK_REPORT_LINKS = [
+    { to: '/pharmacy/reports/stock-valuation', label: 'Stock Valuation', icon: Coins },
+    { to: '/pharmacy/reports/near-expiry',     label: 'Near Expiry',     icon: AlertTriangle },
+    { to: '/pharmacy/reports/stock-movement',  label: 'Stock Movement',  icon: ArrowLeftRight },
+    { to: '/pharmacy/reports/dead-stock',      label: 'Dead Stock',      icon: PackageX },
+];
+const SETTINGS_LINKS = [
+    { to: '/pharmacy/drugs', label: 'Drug Master', icon: Pill },
+    { to: '/pharmacy/racks', label: 'Rack Master', icon: LayoutGrid },
+];
+
 export default function Layout() {
     const location = useLocation();
-    const [sidebarOpen, setSidebarOpen] = useState(false);
+    const [sidebarOpen, setSidebarOpen] = useState(false);   // mobile drawer
+    const [collapsed, setCollapsed] = useState(false);       // desktop icon rail
     const [dispensingOpen, setDispensingOpen] = useState(
         location.pathname.startsWith('/pharmacy/dispensing')
     );
-    const [inventoryOpen, setInventoryOpen] = useState(
-        ['/pharmacy/stock', '/pharmacy/racks', '/pharmacy/drugs'].some(p => location.pathname.startsWith(p))
+    const [salesReportsOpen, setSalesReportsOpen] = useState(
+        SALES_REPORT_LINKS.some(l => location.pathname.startsWith(l.to))
     );
-    const [reportsOpen, setReportsOpen] = useState(
-        ['/pharmacy/sales-ledger', '/pharmacy/reports'].some(p => location.pathname.startsWith(p))
+    const [stockReportsOpen, setStockReportsOpen] = useState(
+        STOCK_REPORT_LINKS.some(l => location.pathname.startsWith(l.to))
+    );
+    const [settingsOpen, setSettingsOpen] = useState(
+        SETTINGS_LINKS.some(l => location.pathname.startsWith(l.to))
     );
 
     const isActive = (path) => location.pathname === path || location.pathname.startsWith(path + '/');
+    const groupActive = (links) => links.some(l => isActive(l.to));
 
-    const NavLink = ({ to, icon: Icon, label }) => (
+    // Top-level link — full row when expanded, centered icon when collapsed.
+    const TopLink = ({ to, icon: Icon, label }) => (
+        <Link
+            to={to}
+            title={collapsed ? label : undefined}
+            className={`sidebar-link ${collapsed ? 'is-icon-only' : ''} ${isActive(to) ? 'active' : ''}`}
+            onClick={() => setSidebarOpen(false)}
+        >
+            <Icon className="sidebar-icon" size={18} />
+            {!collapsed && <span>{label}</span>}
+        </Link>
+    );
+
+    const SubLink = ({ to, icon: Icon, label }) => (
         <Link
             to={to}
             className={`sidebar-link sidebar-submenu-link ${isActive(to) ? 'active' : ''}`}
@@ -43,18 +85,40 @@ export default function Layout() {
         </Link>
     );
 
-    const CollapseToggle = ({ open, onToggle, icon: Icon, label }) => (
-        <button onClick={onToggle} className="sidebar-link sidebar-submenu-toggle">
-            <div className="sidebar-submenu-inner">
-                <Icon className="sidebar-icon" size={18} />
-                {label}
+    // Accordion — collapses to a single icon that re-opens the rail when clicked.
+    const Accordion = ({ open, setOpen, icon: Icon, label, links }) => {
+        if (collapsed) {
+            return (
+                <button
+                    type="button"
+                    title={label}
+                    className={`sidebar-link sidebar-submenu-toggle is-icon-only ${groupActive(links) ? 'active' : ''}`}
+                    onClick={() => { setCollapsed(false); setOpen(true); }}
+                >
+                    <Icon className="sidebar-icon" size={18} />
+                </button>
+            );
+        }
+        return (
+            <div className="sidebar-subsection">
+                <button type="button" onClick={() => setOpen(o => !o)} className="sidebar-link sidebar-submenu-toggle">
+                    <div className="sidebar-submenu-inner">
+                        <Icon className="sidebar-icon" size={18} />
+                        {label}
+                    </div>
+                    {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
+                </button>
+                {open && (
+                    <div className="sidebar-submenu">
+                        {links.map(l => <SubLink key={l.to} {...l} />)}
+                    </div>
+                )}
             </div>
-            {open ? <ChevronDown size={15} /> : <ChevronRight size={15} />}
-        </button>
-    );
+        );
+    };
 
     return (
-        <div className="app-layout">
+        <div className={`app-layout ${collapsed ? 'is-collapsed' : ''}`}>
             {/* Mobile Header */}
             <header className="app-header">
                 <div className="app-logo">
@@ -72,125 +136,103 @@ export default function Layout() {
             </header>
 
             {/* Sidebar */}
-            <aside className={`sidebar ${sidebarOpen ? 'mobile-open' : ''}`}>
+            <aside className={`sidebar ${sidebarOpen ? 'mobile-open' : ''} ${collapsed ? 'is-collapsed' : ''}`}>
                 <div className="sidebar-brand">
                     <Pill size={20} className="sidebar-brand-icon" />
-                    <span className="sidebar-brand-text">ZenoPharmacy</span>
+                    {!collapsed && <span className="sidebar-brand-text">ZenoPharmacy</span>}
                 </div>
 
                 <nav className="sidebar-nav">
                     <ul className="sidebar-menu">
                         {/* Dashboard */}
                         <li>
-                            <Link
-                                to="/pharmacy/dashboard"
-                                className={`sidebar-link ${isActive('/pharmacy/dashboard') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <LayoutDashboard className="sidebar-icon" size={18} />
-                                Dashboard
-                            </Link>
+                            <TopLink to="/pharmacy/dashboard" icon={LayoutDashboard} label="Dashboard" />
                         </li>
 
-                        {/* Dispensing Section — Counter Sale (anchor) + IPD collapsible */}
+                        {/* Sales & Dispensing — Counter Sale + Ward Dispensing + Sales Ledger */}
                         <li className="sidebar-section">
-                            <div className="sidebar-section-title">Dispensing</div>
-
-                            <Link
-                                to="/pharmacy/counter-sale"
-                                className={`sidebar-link ${isActive('/pharmacy/counter-sale') ? 'active' : ''}`}
-                                onClick={() => setSidebarOpen(false)}
-                            >
-                                <ShoppingCart className="sidebar-icon" size={18} />
-                                Counter Sale
-                            </Link>
-
-                            <div className="sidebar-subsection">
-                                <CollapseToggle
-                                    open={dispensingOpen}
-                                    onToggle={() => setDispensingOpen(o => !o)}
-                                    icon={Pill}
-                                    label="IPD Dispensing"
-                                />
-                                {dispensingOpen && (
-                                    <div className="sidebar-submenu">
-                                        <NavLink to="/pharmacy/dispensing/queue" icon={Pill} label="Queue" />
-                                        <NavLink to="/pharmacy/dispensing/logs" icon={History} label="Dispensing Logs" />
-                                    </div>
-                                )}
-                            </div>
+                            {!collapsed && <div className="sidebar-section-title">Sales & Dispensing</div>}
+                            <TopLink to="/pharmacy/counter-sale" icon={ShoppingCart} label="Counter Sale" />
+                            <Accordion
+                                open={dispensingOpen}
+                                setOpen={setDispensingOpen}
+                                icon={ClipboardList}
+                                label="Ward Dispensing"
+                                links={WARD_LINKS}
+                            />
+                            <TopLink to="/pharmacy/sales-ledger" icon={Receipt} label="Sales Ledger" />
                         </li>
 
-                        {/* Inventory Section — Stock (anchor) + Racks + Drug Master */}
+                        {/* Inventory — Stock on hand */}
                         <li className="sidebar-section">
-                            <div className="sidebar-section-title">Inventory</div>
-
-                            <div className="sidebar-subsection">
-                                <CollapseToggle
-                                    open={inventoryOpen}
-                                    onToggle={() => setInventoryOpen(o => !o)}
-                                    icon={Boxes}
-                                    label="Stock"
-                                />
-                                {inventoryOpen && (
-                                    <div className="sidebar-submenu">
-                                        <NavLink to="/pharmacy/stock" icon={Boxes} label="Stock Dashboard" />
-                                        <NavLink to="/pharmacy/racks" icon={LayoutGrid} label="Rack Master" />
-                                        <NavLink to="/pharmacy/drugs" icon={Pill} label="Drug Master" />
-                                    </div>
-                                )}
-                            </div>
+                            {!collapsed && <div className="sidebar-section-title">Inventory</div>}
+                            <TopLink to="/pharmacy/stock" icon={Boxes} label="Stock on Hand" />
                         </li>
 
-                        {/* Reports & Ledger Section */}
+                        {/* Reports — grouped Sales & Stock analytics */}
                         <li className="sidebar-section">
-                            <div className="sidebar-section-title">Reports</div>
+                            {!collapsed && <div className="sidebar-section-title">Reports</div>}
+                            <Accordion
+                                open={salesReportsOpen}
+                                setOpen={setSalesReportsOpen}
+                                icon={BarChart2}
+                                label="Sales Reports"
+                                links={SALES_REPORT_LINKS}
+                            />
+                            <Accordion
+                                open={stockReportsOpen}
+                                setOpen={setStockReportsOpen}
+                                icon={PieChart}
+                                label="Stock Reports"
+                                links={STOCK_REPORT_LINKS}
+                            />
+                        </li>
 
-                            <div className="sidebar-subsection">
-                                <CollapseToggle
-                                    open={reportsOpen}
-                                    onToggle={() => setReportsOpen(o => !o)}
-                                    icon={FileText}
-                                    label="Ledger & Reports"
-                                />
-                                {reportsOpen && (
-                                    <div className="sidebar-submenu">
-                                        <NavLink to="/pharmacy/sales-ledger" icon={History} label="Sales Ledger" />
-                                        <NavLink to="/pharmacy/reports" icon={FileText} label="Reports" />
-                                    </div>
-                                )}
-                            </div>
+                        {/* Settings — masters & one-time setup */}
+                        <li className="sidebar-section">
+                            <Accordion
+                                open={settingsOpen}
+                                setOpen={setSettingsOpen}
+                                icon={Settings}
+                                label="Settings"
+                                links={SETTINGS_LINKS}
+                            />
+                        </li>
+
+                        {/* Other Apps — pinned to the bottom of the nav */}
+                        <li className="sidebar-section sidebar-apps-section">
+                            {!collapsed && <div className="sidebar-section-title">Other Apps</div>}
+                            {EXTERNAL_APPS.map((app) => {
+                                const Icon = app.icon;
+                                return (
+                                    <a
+                                        key={app.href}
+                                        href={app.href}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        title={collapsed ? app.label : undefined}
+                                        className={`sidebar-link sidebar-link--app ${collapsed ? 'is-icon-only' : ''}`}
+                                        onClick={() => setSidebarOpen(false)}
+                                    >
+                                        <Icon className="sidebar-icon" size={16} />
+                                        {!collapsed && <span className="sidebar-app-label">{app.label}</span>}
+                                        {!collapsed && <ArrowUpRight size={12} className="sidebar-app-arrow" />}
+                                    </a>
+                                );
+                            })}
                         </li>
                     </ul>
                 </nav>
 
                 <div className="sidebar-footer">
-                    <div className="sidebar-section-title sidebar-section-title--footer">Other Apps</div>
-                    {EXTERNAL_APPS.map((app) => {
-                        const Icon = app.icon;
-                        return (
-                            <a
-                                key={app.href}
-                                href={app.href}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="sidebar-link sidebar-link--app"
-                            >
-                                <Icon className="sidebar-icon" size={16} />
-                                <span className="sidebar-app-label">{app.label}</span>
-                                <ArrowUpRight size={12} className="sidebar-app-arrow" />
-                            </a>
-                        );
-                    })}
-
-                    <div className="sidebar-copyright">© 2026 Pharmacy Manager</div>
+                    {!collapsed && <div className="sidebar-copyright">© 2026 Pharmacy Manager</div>}
                 </div>
             </aside>
 
             {/* Right column — fixed header + scrollable content.
                 Outlet swaps, header + sidebar stay fixed. */}
             <div className="app-main">
-                <Header />
+                <Header onToggleSidebar={() => setCollapsed(c => !c)} />
                 <main className="main-content">
                     <Suspense fallback={<ContentLoader />}>
                         <div className="page-enter" key={location.pathname}>

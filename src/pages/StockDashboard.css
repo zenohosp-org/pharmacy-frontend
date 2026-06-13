@@ -39,3 +39,71 @@
     font-size: var(--fs-xs);
     color: var(--color-text-muted, #6b7280);
 }
+
+/* ── Stock level meter (drug row) ── */
+.stock-qty {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    min-width: 120px;
+}
+.stock-qty-val {
+    font-weight: var(--fw-bold);
+    font-size: var(--fs-base);
+    color: var(--color-gray-900);
+}
+.stock-unit { font-weight: var(--fw-normal); color: var(--color-gray-400); font-size: var(--fs-xs); }
+.stock-meter {
+    height: 6px;
+    border-radius: var(--radius-full);
+    background: var(--color-gray-100);
+    overflow: hidden;
+}
+.stock-meter-fill {
+    display: block;
+    height: 100%;
+    border-radius: var(--radius-full);
+    transition: width var(--transition-slow);
+}
+.stock-meter-fill--ok     { background: var(--gradient-success); }
+.stock-meter-fill--warn   { background: var(--gradient-warning); }
+.stock-meter-fill--danger { background: var(--gradient-danger); }
+
+.stock-w-0   { width: 0; }
+.stock-w-10  { width: 10%; }
+.stock-w-20  { width: 20%; }
+.stock-w-30  { width: 30%; }
+.stock-w-40  { width: 40%; }
+.stock-w-50  { width: 50%; }
+.stock-w-60  { width: 60%; }
+.stock-w-70  { width: 70%; }
+.stock-w-80  { width: 80%; }
+.stock-w-90  { width: 90%; }
+.stock-w-100 { width: 100%; }
+
+/* ── Expiry pill (batch row) ── */
+.exp-pill {
+    display: inline-block;
+    padding: 3px 9px;
+    border-radius: var(--radius-full);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+    white-space: nowrap;
+}
+.exp-pill--ok      { background: var(--color-success-subtle); color: var(--color-success-dark); }
+.exp-pill--warn    { background: var(--color-warning-subtle); color: var(--color-warning-dark); }
+.exp-pill--danger  { background: var(--color-error-subtle);   color: var(--color-error-dark); }
+.exp-pill--expired { background: var(--color-gray-800);        color: #fff; }
+
+/* ── Strip/loose/rack chips ── */
+.stock-chips { display: inline-flex; gap: 5px; flex-wrap: wrap; }
+.stock-chip {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: var(--radius-md);
+    font-size: var(--fs-xs);
+    font-weight: var(--fw-semibold);
+}
+.stock-chip--strip { background: var(--color-primary-subtle); color: var(--color-primary-dark); }
+.stock-chip--loose { background: var(--color-gray-100);        color: var(--color-gray-600); }
+.stock-chip--rack  { background: var(--color-info-subtle);     color: var(--color-info-dark); font-family: var(--font-mono); }

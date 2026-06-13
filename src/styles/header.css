@@ -12,6 +12,26 @@
     flex-shrink: 0;
 }
 
+.ph-header-burger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border: none;
+    background: none;
+    color: var(--color-gray-600);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    flex-shrink: 0;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+
+.ph-header-burger:hover {
+    background: var(--color-gray-100);
+    color: var(--color-gray-900);
+}
+
 .ph-header-title {
     font-size: var(--fs-base);
     font-weight: var(--fw-semibold);

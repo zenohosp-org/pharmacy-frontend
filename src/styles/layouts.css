@@ -3,6 +3,7 @@
 /* ── SIDEBAR WIDTH CONSTANT ── */
 :root {
   --sidebar-width: 260px;
+  --sidebar-collapsed-width: 72px;
   --header-height: 64px;
 }
 
@@ -17,6 +18,38 @@
   height: 100vh;
   overflow: hidden;
   background-color: var(--color-bg-page);
+  transition: grid-template-columns 200ms ease;
+}
+
+/* Collapsed desktop sidebar — icon rail */
+.app-layout.is-collapsed {
+  grid-template-columns: var(--sidebar-collapsed-width) 1fr;
+}
+
+.sidebar.is-collapsed .sidebar-brand {
+  justify-content: center;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.is-collapsed .sidebar-link.is-icon-only,
+.sidebar.is-collapsed .sidebar-submenu-toggle.is-icon-only {
+  justify-content: center;
+  gap: 0;
+  margin-left: 0;
+  width: 100%;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.sidebar.is-collapsed .sidebar-apps-section {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* Active accent bar sits outside the rail — drop it when collapsed */
+.sidebar-link.is-icon-only.active::before {
+  display: none;
 }
 
 /* ── HEADER — hidden on desktop, shown on mobile ── */
@@ -91,6 +124,16 @@
 .sidebar-menu {
   list-style: none;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
+}
+
+/* Pins "Other Apps" to the bottom of the scrollable nav */
+.sidebar-apps-section {
+  margin-top: auto;
+  padding-top: var(--spacing-3);
+  border-top: 1px solid #e5e7eb;
 }
 
 .sidebar-section-title {
@@ -224,11 +267,6 @@
   flex-direction: column;
   gap: var(--spacing-3);
   flex-shrink: 0;
-}
-
-.sidebar-section-title--footer {
-  margin-top: 0;
-  margin-bottom: 6px;
 }
 
 .sidebar-link--app {
@@ -475,9 +513,15 @@
    RESPONSIVE — MOBILE
    ════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .app-layout {
+  .app-layout,
+  .app-layout.is-collapsed {
     grid-template-columns: 1fr;
     grid-template-rows: var(--header-height) 1fr;
+  }
+
+  /* Collapse is a desktop affordance — hide its toggle on mobile */
+  .ph-header-burger {
+    display: none;
   }
 
   /* Show mobile header */

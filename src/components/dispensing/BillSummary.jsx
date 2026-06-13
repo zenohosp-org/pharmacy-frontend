@@ -70,7 +70,7 @@ export default function BillSummary({
           block
           onClick={onCheckout}
           disabled={loading || !cartLength || (requiresDoctor && !doctorName.trim())}
-          className="section-gap"
+          className="section-gap cs-checkout"
         >
           {loading ? 'Processing…' : `✓ Complete Sale  ₹${fmt(totals.total)}`}
         </Button>

@@ -1,8 +1,8 @@
-import { LogOut } from 'lucide-react';
+import { LogOut, PanelLeft } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import '../styles/header.css';
 
-export default function Header() {
+export default function Header({ onToggleSidebar }) {
     const { user, logout } = useAuth();
 
     const displayName = user?.email || 'User';
@@ -10,6 +10,16 @@ export default function Header() {
 
     return (
         <header className="ph-header">
+            {onToggleSidebar && (
+                <button
+                    onClick={onToggleSidebar}
+                    className="ph-header-burger"
+                    aria-label="Toggle sidebar"
+                    title="Toggle sidebar"
+                >
+                    <PanelLeft size={18} />
+                </button>
+            )}
             <span className="ph-header-title">Pharmacy Management</span>
 
             <div className="ph-header-right">
