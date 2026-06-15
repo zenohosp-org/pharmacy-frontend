@@ -152,7 +152,7 @@ export default function Layout() {
                         {/* Sales & Dispensing — Counter Sale + Ward Dispensing + Sales Ledger */}
                         <li className="sidebar-section">
                             {!collapsed && <div className="sidebar-section-title">Sales & Dispensing</div>}
-                            <TopLink to="/pharmacy/counter-sale" icon={ShoppingCart} label="Counter Sale" />
+                            <TopLink to="/pharmacy/counter-sale" icon={ShoppingCart} label="POS" />
                             <Accordion
                                 open={dispensingOpen}
                                 setOpen={setDispensingOpen}
@@ -199,33 +199,30 @@ export default function Layout() {
                             />
                         </li>
 
-                        {/* Other Apps — pinned to the bottom of the nav */}
-                        <li className="sidebar-section sidebar-apps-section">
-                            {!collapsed && <div className="sidebar-section-title">Other Apps</div>}
-                            {EXTERNAL_APPS.map((app) => {
-                                const Icon = app.icon;
-                                return (
-                                    <a
-                                        key={app.href}
-                                        href={app.href}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        title={collapsed ? app.label : undefined}
-                                        className={`sidebar-link sidebar-link--app ${collapsed ? 'is-icon-only' : ''}`}
-                                        onClick={() => setSidebarOpen(false)}
-                                    >
-                                        <Icon className="sidebar-icon" size={16} />
-                                        {!collapsed && <span className="sidebar-app-label">{app.label}</span>}
-                                        {!collapsed && <ArrowUpRight size={12} className="sidebar-app-arrow" />}
-                                    </a>
-                                );
-                            })}
-                        </li>
                     </ul>
                 </nav>
 
+                {/* Other Apps — fixed footer; the nav scrolls underneath it */}
                 <div className="sidebar-footer">
-                    {!collapsed && <div className="sidebar-copyright">© 2026 Pharmacy Manager</div>}
+                    {!collapsed && <div className="sidebar-section-title sidebar-apps-title">Other Apps</div>}
+                    {EXTERNAL_APPS.map((app) => {
+                        const Icon = app.icon;
+                        return (
+                            <a
+                                key={app.href}
+                                href={app.href}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                title={collapsed ? app.label : undefined}
+                                className={`sidebar-link sidebar-link--app ${collapsed ? 'is-icon-only' : ''}`}
+                                onClick={() => setSidebarOpen(false)}
+                            >
+                                <Icon className="sidebar-icon" size={16} />
+                                {!collapsed && <span className="sidebar-app-label">{app.label}</span>}
+                                {!collapsed && <ArrowUpRight size={12} className="sidebar-app-arrow" />}
+                            </a>
+                        );
+                    })}
                 </div>
             </aside>
 

@@ -29,6 +29,7 @@ export default function CounterSale() {
   const [paymentMode, setPaymentMode] = useState('CASH');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [notice, setNotice] = useState(null);
   const [completedSales, setCompletedSales] = useState([]);
 
   const handleDrugSelect = async (drug) => {
@@ -44,17 +45,15 @@ export default function CounterSale() {
       setAlternatives(altData);
 
       if (sorted.length === 0) {
-        setError(
-          raw.length === 0
-            ? `${drug.brandName} — no batches available (out of stock)`
-            : `${drug.brandName} — all batches are out of stock`
-        );
+        setError(null);
+        setNotice(`${drug.brandName} is currently out of stock — no batches available.`);
         clearPending();
         setDrugSearch('');
         return;
       }
 
       setError(null);
+      setNotice(null);
       setPending({
         id: Math.random(),
         drugId: drug.id,
@@ -143,17 +142,19 @@ export default function CounterSale() {
     setDoctorName('');
     setPaymentMode('CASH');
     setError(null);
+    setNotice(null);
   };
 
   return (
     <div>
       <PageHeader
-        title="Counter Sale"
+        title="POS"
         subtitle="Search drug → batch auto-selected (FEFO, change it from the dropdown if needed) → enter qty → add"
         actions={<Link to="/pharmacy/sales-ledger" className="btn btn-secondary">Sales Ledger</Link>}
       />
 
       {error && <Alert tone="error" className="section-gap">{error}</Alert>}
+      {notice && <Alert tone="info" className="section-gap">{notice}</Alert>}
 
       <div className="cs-grid">
         {/* ── LEFT ── */}

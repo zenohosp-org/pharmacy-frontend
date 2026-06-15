@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingCart, Stethoscope, Pill, ChevronRight } from 'lucide-react';
 
 const QUICK_ACTIONS = [
-  { label: 'Counter Sale', desc: 'Walk-in POS billing', to: '/pharmacy/counter-sale', Icon: ShoppingCart, tone: 'success' },
+  { label: 'POS', desc: 'Walk-in counter billing', to: '/pharmacy/counter-sale', Icon: ShoppingCart, tone: 'success' },
   { label: 'IPD Dispensing', desc: 'Ward & prescription queue', to: '/pharmacy/dispensing/queue', Icon: Stethoscope, tone: 'primary' },
   { label: 'Drug Master', desc: 'Catalogue & stock setup', to: '/pharmacy/drugs', Icon: Pill, tone: 'info' },
 ];

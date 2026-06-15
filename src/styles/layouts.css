@@ -42,7 +42,7 @@
   padding-right: 0;
 }
 
-.sidebar.is-collapsed .sidebar-apps-section {
+.sidebar.is-collapsed .sidebar-footer {
   padding-left: 0;
   padding-right: 0;
 }
@@ -124,16 +124,6 @@
 .sidebar-menu {
   list-style: none;
   padding: 0;
-  display: flex;
-  flex-direction: column;
-  min-height: 100%;
-}
-
-/* Pins "Other Apps" to the bottom of the scrollable nav */
-.sidebar-apps-section {
-  margin-top: auto;
-  padding-top: var(--spacing-3);
-  border-top: 1px solid #e5e7eb;
 }
 
 .sidebar-section-title {
@@ -258,15 +248,27 @@
   color: var(--color-primary);
 }
 
-/* ── Sidebar Footer ── */
+/* ── Sidebar Footer — fixed; nav scrolls underneath it ── */
 .sidebar-footer {
-  margin-top: auto;
-  padding: var(--spacing-4) var(--spacing-4);
+  padding: 10px;
   border-top: 1px solid #e5e7eb;
+  background: #f9fafb;
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-3);
+  gap: 2px;
   flex-shrink: 0;
+}
+
+.sidebar-apps-title {
+  padding: 4px var(--spacing-3) 6px;
+}
+
+/* Compact, smaller-font app rows in the footer */
+.sidebar-footer .sidebar-link--app {
+  margin: 0;
+  width: 100%;
+  padding: 6px var(--spacing-3);
+  font-size: 13px;
 }
 
 .sidebar-link--app {
@@ -506,7 +508,14 @@
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: var(--spacing-4);
-  margin-bottom: var(--spacing-4);
+  margin-bottom: var(--spacing-5);
+}
+
+/* Paired fields: the row's gap + margin control spacing, so the inner
+   .form-group shouldn't also stack its own bottom margin (caused uneven
+   vertical rhythm between paired rows and single fields). */
+.modal-form-row .form-group {
+  margin-bottom: 0;
 }
 
 /* ════════════════════════════════════════

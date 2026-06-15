@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { createPortal } from 'react-dom';
 
 /**
  * Reusable modal — wraps the shared .modal classes in components.css.
@@ -6,6 +7,11 @@ import { useEffect } from 'react';
  * onClose: called on overlay click, close button, or Escape
  * title: header text
  * footer: optional footer node (e.g. action buttons)
+ *
+ * Rendered through a portal to document.body so the fixed overlay covers the
+ * full viewport. The page-content wrapper (.page-enter) keeps a CSS transform
+ * (animation fill-mode: both), which would otherwise become the containing
+ * block for the fixed overlay and clip the modal under the header.
  */
 export default function Modal({ open, onClose, title, footer, children }) {
     useEffect(() => {
@@ -17,7 +23,7 @@ export default function Modal({ open, onClose, title, footer, children }) {
 
     if (!open) return null;
 
-    return (
+    return createPortal(
         <div
             className="modal-overlay active"
             onClick={(e) => { if (e.target === e.currentTarget) onClose?.(); }}
@@ -30,6 +36,7 @@ export default function Modal({ open, onClose, title, footer, children }) {
                 <div className="modal-body">{children}</div>
                 {footer && <div className="modal-footer">{footer}</div>}
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
