@@ -1,6 +1,5 @@
 /* Design System - Base Variables and Utilities */
-
-@import url('https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap');
+/* Lexend is loaded via <link> in index.html (preconnect + preload). */
 
 :root {
   /* ── Brand Colors — pure neutral, matches HMS identity ── */

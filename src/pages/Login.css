@@ -1,234 +1,328 @@
-/* Login — self-contained dark auth page (rendered outside the layout shell). */
+/* Login — two-pane auth page (rendered outside the layout shell).
+   Left pane keeps this app's own SSO flow; right pane is a pharmacy-themed
+   port of the HMS feature carousel. All visuals are inline lucide icons + CSS
+   (no images, no network round-trips) so the panel paints instantly. */
 
-.login-page {
+.pharmacy-login {
     min-height: 100vh;
     display: flex;
-    flex-direction: row;
-    background-color: #0f172a;
-    color: #cbd5e1;
-    overflow: hidden;
-    position: relative;
+    flex-direction: column;
+    background: var(--color-white);
+    font-family: var(--font-primary);
 }
 
-/* SSO callback loading state */
-.login-loading {
+@media (min-width: 1024px) {
+    .pharmacy-login {
+        flex-direction: row;
+    }
+}
+
+/* ── SSO callback loading state ── */
+.pharmacy-login__loading {
     min-height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
-    background-color: #0f172a;
+    background: var(--color-white);
 }
 
-.login-spinner {
+.pharmacy-login__loading-inner {
+    text-align: center;
+}
+
+.pharmacy-login__spinner {
     width: 50px;
     height: 50px;
-    border: 4px solid #3b82f6;
-    border-top-color: transparent;
+    border: 4px solid var(--color-gray-200);
+    border-top-color: var(--color-gray-900);
     border-radius: 50%;
-    animation: login-spin 1s linear infinite;
+    animation: pharmacy-login-spin 1s linear infinite;
     margin: 0 auto 20px;
 }
 
-.login-loading-text {
-    color: white;
-    font-weight: bold;
+.pharmacy-login__loading-text {
+    color: var(--color-gray-600);
+    font-weight: 600;
     letter-spacing: 0.1em;
     text-transform: uppercase;
     font-size: 12px;
 }
 
-@keyframes login-spin {
+@keyframes pharmacy-login-spin {
     to { transform: rotate(360deg); }
 }
 
-/* Left marketing panel */
-.login-left {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 40px 80px;
-    z-index: 10;
-    position: relative;
-}
-
-.login-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 12px;
-    width: fit-content;
-    background-color: rgba(59, 130, 246, 0.1);
-    border: 1px solid rgba(59, 130, 246, 0.2);
-    padding: 8px 16px;
-    border-radius: 9999px;
-    margin-bottom: 32px;
-}
-
-.login-badge-text {
-    font-size: 12px;
-    font-weight: bold;
-    color: #60a5fa;
-    letter-spacing: 0.05em;
-    text-transform: uppercase;
-}
-
-.login-title {
-    font-size: 56px;
-    font-weight: bold;
-    margin-bottom: 24px;
-    background: linear-gradient(to right, #ffffff, #cbd5e1);
-    background-clip: text;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    line-height: 1.2;
-}
-
-.login-subtitle {
-    font-size: 18px;
-    color: #94a3b8;
-    max-width: 500px;
-    margin-bottom: 48px;
-}
-
-.login-features {
-    margin-bottom: 20px;
-}
-
-.login-feature {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    font-weight: 500;
-    color: #cbd5e1;
-    margin-bottom: 16px;
-}
-
-.login-feature:last-child {
-    margin-bottom: 0;
-}
-
-.login-feature-check {
-    color: #10b981;
-}
-
-/* Right card panel */
-.login-right {
-    flex: 1;
+/* ════════════════════════════════════════
+   LEFT — Sign in
+   ════════════════════════════════════════ */
+.pharmacy-login__form-pane {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
     padding: 32px;
-    z-index: 10;
 }
 
-.login-card {
+@media (min-width: 1024px) {
+    .pharmacy-login__form-pane {
+        width: 45%;
+        padding: 48px;
+    }
+}
+
+.pharmacy-login__form-inner {
     width: 100%;
-    max-width: 400px;
-    background-color: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(30px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    padding: 40px;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    position: relative;
+    max-width: 384px;
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
 }
 
-.login-card-accent {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background: linear-gradient(to right, #3b82f6, #a855f7);
-    border-radius: 24px 24px 0 0;
-}
-
-.login-card-head {
-    text-align: center;
-    margin-bottom: 32px;
-}
-
-.login-logo {
-    display: inline-flex;
+.pharmacy-login__brand {
+    display: flex;
     align-items: center;
-    justify-content: center;
-    width: 80px;
-    height: 80px;
-    background-color: rgba(59, 130, 246, 0.1);
-    border-radius: 16px;
-    margin-bottom: 24px;
-    border: 1px solid rgba(59, 130, 246, 0.2);
+    gap: 12px;
 }
 
-.login-logo-emoji {
-    font-size: 40px;
-}
-
-.login-card-title {
-    font-size: 24px;
-    font-weight: bold;
-    color: white;
-    margin-bottom: 8px;
-}
-
-.login-card-sub {
-    color: #94a3b8;
-}
-
-.login-error {
-    background-color: rgba(239, 68, 68, 0.1);
-    border: 1px solid rgba(239, 68, 68, 0.2);
-    color: #f87171;
-    font-size: 14px;
-    padding: 12px 16px;
+.pharmacy-login__brand-icon {
+    width: 40px;
+    height: 40px;
+    background: var(--color-gray-900);
+    color: var(--color-white);
     border-radius: 8px;
-    margin-bottom: 24px;
-    text-align: center;
-}
-
-.login-sso-btn {
-    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 16px;
-    background-color: white;
-    color: #1f2937;
-    font-weight: bold;
-    padding: 16px;
-    border-radius: 12px;
-    border: none;
-    cursor: pointer;
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-    font-size: 16px;
-    margin-bottom: 24px;
-    transition: all 0.2s;
+    box-shadow: var(--shadow-lg);
 }
 
-.login-sso-btn:hover {
-    background-color: #f3f4f6;
-    box-shadow: 0 25px 30px -5px rgba(0, 0, 0, 0.15);
-}
-
-.login-sso-emoji {
+.pharmacy-login__brand-title {
+    margin: 0;
     font-size: 20px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    line-height: 1;
 }
 
-.login-terms {
+.pharmacy-login__brand-sub {
+    margin: 4px 0 0;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-gray-600);
+}
+
+.pharmacy-login__heading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.pharmacy-login__heading h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+}
+
+.pharmacy-login__heading p {
+    margin: 0;
+    font-size: 15px;
+    color: var(--color-gray-500);
+}
+
+.pharmacy-login__alert {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 15px;
+    border: 1px solid;
+}
+
+.pharmacy-login__alert.is-danger {
+    background: #fff1f2;
+    border-color: #fecdd3;
+    color: #be123c;
+}
+
+.pharmacy-login__sso-btn {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--color-gray-900);
+    color: var(--color-white);
+    font-family: var(--font-primary);
+    font-weight: 700;
+    font-size: 15px;
+    border: 0;
+    border-radius: 8px;
+    box-shadow: var(--shadow-lg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    cursor: pointer;
+    transition: background 200ms ease, transform 100ms ease;
+}
+
+.pharmacy-login__sso-btn:hover {
+    background: var(--color-gray-800);
+}
+
+.pharmacy-login__sso-btn:active {
+    transform: scale(0.98);
+}
+
+.pharmacy-login__terms {
+    margin: 0;
     text-align: center;
-    font-size: 12px;
-    color: #64748b;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--color-gray-600);
 }
 
-@media (max-width: 900px) {
-    .login-page {
+/* ════════════════════════════════════════
+   RIGHT — Auto-rotating feature carousel
+   Hidden on small screens; 55% on desktop.
+   ════════════════════════════════════════ */
+.pharmacy-login__visual {
+    display: none;
+}
+
+@media (min-width: 1024px) {
+    .pharmacy-login__visual {
+        display: flex;
+        width: 55%;
+        background: var(--color-white);
+        border-left: 1px solid var(--color-gray-200);
+        position: relative;
+        overflow: hidden;
         flex-direction: column;
-        overflow: auto;
+        align-items: center;
+        justify-content: center;
+        padding: 48px;
     }
-    .login-left {
-        padding: 40px 24px 0;
-    }
-    .login-title {
-        font-size: 40px;
-    }
+}
+
+.pharmacy-login__carousel {
+    position: relative;
+    width: 100%;
+    max-width: 480px;
+    height: 380px;
+    flex-shrink: 0;
+}
+
+.pharmacy-login__slide {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 40px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity 500ms ease, transform 500ms ease;
+    pointer-events: none;
+    will-change: opacity, transform;
+}
+
+.pharmacy-login__slide.is-active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.pharmacy-login__slide-stage {
+    position: relative;
+    width: 220px;
+    height: 220px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pharmacy-login__slide-hero {
+    width: 112px;
+    height: 112px;
+    border-radius: 999px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 14px 36px -10px rgba(15, 23, 42, 0.18);
+    animation: pharmacy-login-pulse-hero 3.2s ease-in-out infinite;
+}
+
+.pharmacy-login__slide.is-blue   .pharmacy-login__slide-hero { background: #dbeafe; color: #2563eb; }
+.pharmacy-login__slide.is-violet .pharmacy-login__slide-hero { background: #ede9fe; color: #7c3aed; }
+.pharmacy-login__slide.is-amber  .pharmacy-login__slide-hero { background: #fef3c7; color: #d97706; }
+.pharmacy-login__slide.is-green  .pharmacy-login__slide-hero { background: #d1fae5; color: #059669; }
+
+@keyframes pharmacy-login-pulse-hero {
+    0%, 100% { transform: scale(1); }
+    50%      { transform: scale(1.04); }
+}
+
+.pharmacy-login__slide-orb {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    border-radius: 999px;
+    background: var(--color-white);
+    border: 1px solid var(--color-gray-200);
+    color: var(--color-gray-700);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 20px -6px rgba(15, 23, 42, 0.12);
+    animation: pharmacy-login-orb-float 4s ease-in-out infinite;
+}
+
+.pharmacy-login__slide-orb.is-orb-1 { top: 6%;     right: 4%;  animation-delay: 0s;   }
+.pharmacy-login__slide-orb.is-orb-2 { bottom: 14%; right: 0%;  animation-delay: 0.7s; }
+.pharmacy-login__slide-orb.is-orb-3 { bottom: 6%;  left: 10%;  animation-delay: 1.4s; }
+
+@keyframes pharmacy-login-orb-float {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-8px); }
+}
+
+.pharmacy-login__slide-caption {
+    text-align: center;
+    max-width: 380px;
+}
+
+.pharmacy-login__slide-caption h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--color-gray-900);
+    line-height: 1.3;
+    letter-spacing: -0.01em;
+}
+
+.pharmacy-login__slide-caption p {
+    margin: 0;
+    font-size: 14px;
+    color: var(--color-gray-600);
+    line-height: 1.55;
+}
+
+.pharmacy-login__dots {
+    display: flex;
+    gap: 8px;
+    margin-top: 36px;
+}
+
+.pharmacy-login__dot {
+    width: 8px;
+    height: 8px;
+    padding: 0;
+    border: none;
+    border-radius: 999px;
+    background: var(--color-gray-300);
+    cursor: pointer;
+    transition: width 220ms ease, background-color 220ms ease;
+}
+
+.pharmacy-login__dot.is-active {
+    width: 26px;
+    background: var(--color-gray-900);
 }

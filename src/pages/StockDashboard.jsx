@@ -14,7 +14,7 @@ import './StockDashboard.css';
 export default function StockDashboard() {
   const {
     drugs, expiryAlerts, reorderAlerts, batchDetails, loading, error,
-    getStockQtyForDrug, isDrugInExpiryAlert, getDrugReorderAlert, getDrugName, loadBatches,
+    getStockQtyForDrug, isDrugInExpiryAlert, getDrugReorderAlert, loadBatches,
   } = useStockOverview();
 
   const [editingBatch, setEditingBatch] = useState(null);
@@ -107,7 +107,7 @@ export default function StockDashboard() {
 
       {error && <Alert tone="error" className="section-gap">{error}</Alert>}
 
-      <StockAlertsBanner reorderAlerts={reorderAlerts} expiryAlerts={expiryAlerts} getDrugName={getDrugName} />
+      <StockAlertsBanner reorderAlerts={reorderAlerts} expiryAlerts={expiryAlerts} />
 
       <Card padded={false} title={`Current Stock Levels (${drugs.length})`}>
         <Table

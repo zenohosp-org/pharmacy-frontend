@@ -42,10 +42,6 @@ export default function useStockOverview() {
   };
   const isDrugInExpiryAlert = (drugId) => expiryAlerts.some(b => b.drugId === drugId);
   const getDrugReorderAlert = (drugId) => reorderAlerts.find(a => a.drugId === drugId);
-  const getDrugName = (drugId) => {
-    const drug = drugs.find(d => d.id === drugId);
-    return drug ? `${drug.brandName} (${drug.genericName})` : drugId;
-  };
 
   const loadBatches = async (drug, force = false) => {
     if (!force && batchDetails[drug.id]) return;
@@ -59,6 +55,6 @@ export default function useStockOverview() {
 
   return {
     drugs, expiryAlerts, reorderAlerts, batchDetails, loading, error,
-    getStockQtyForDrug, isDrugInExpiryAlert, getDrugReorderAlert, getDrugName, loadBatches,
+    getStockQtyForDrug, isDrugInExpiryAlert, getDrugReorderAlert, loadBatches,
   };
 }
