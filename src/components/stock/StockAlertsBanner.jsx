@@ -67,7 +67,7 @@ export default function StockAlertsBanner({ reorderAlerts, expiryAlerts }) {
           const sev = expirySeverity(days);
           return (
             <div className="sa-row" key={b.id}>
-              <span className="sa-row-name">{b.drugName || 'Unknown drug'}</span>
+              <span className="sa-row-name">{b.brandName || b.drugName || 'Unknown drug'}</span>
               <span className="sa-row-meta">{days < 0 ? 'expired' : `in ${days}d`}</span>
               <span className={`sa-pill sa-pill--${sev.tone}`}>{sev.label}</span>
             </div>
