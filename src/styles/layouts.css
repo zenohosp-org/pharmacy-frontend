@@ -47,11 +47,6 @@
   padding-right: 0;
 }
 
-/* Active accent bar sits outside the rail — drop it when collapsed */
-.sidebar-link.is-icon-only.active::before {
-  display: none;
-}
-
 /* ── HEADER — hidden on desktop, shown on mobile ── */
 .app-header {
   display: none;
@@ -165,23 +160,10 @@
 }
 
 .sidebar-link.active {
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary-dark);
+  background-color: #e4e4e4;
+  color: #020617;
   margin: 0px 0px 0px 12px;
-  font-weight: 600;
-  position: relative;
-}
-
-.sidebar-link.active::before {
-  content: '';
-  position: absolute;
-  left: -12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 60%;
-  border-radius: var(--radius-full);
-  background: var(--gradient-brand);
+  font-weight: 500;
 }
 
 .sidebar-link.active .sidebar-icon {
@@ -240,9 +222,9 @@
 }
 
 .sidebar-submenu-link.active {
-  background-color: var(--color-primary-subtle);
-  color: var(--color-primary-dark);
-  font-weight: 600;
+  background-color: #e4e4e4;
+  color: #020617;
+  font-weight: 500;
 }
 .sidebar-submenu-link.active .sidebar-icon {
   color: var(--color-primary);
@@ -252,7 +234,7 @@
 .sidebar-footer {
   padding: 10px;
   border-top: 1px solid #e5e7eb;
-  background: #f9fafb;
+  background: #cffafe;
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -261,6 +243,7 @@
 
 .sidebar-apps-title {
   padding: 4px var(--spacing-3) 6px;
+  color: #020617;
 }
 
 /* Compact, smaller-font app rows in the footer */
@@ -275,6 +258,20 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  color: #020617;
+}
+
+.sidebar-link--app .sidebar-icon {
+  color: #020617;
+}
+
+.sidebar-link--app:hover {
+  background-color: rgba(0, 0, 0, 0.10);
+  color: #020617;
+}
+
+.sidebar-link--app:hover .sidebar-icon {
+  color: #020617;
 }
 
 .sidebar-app-label {
@@ -340,7 +337,7 @@
   width: 34px;
   height: 34px;
   border-radius: var(--radius-full);
-  background: linear-gradient(135deg, #000000, var(--color-primary-light));
+  background: var(--color-primary);
   color: var(--color-white);
   display: flex;
   align-items: center;
@@ -348,7 +345,7 @@
   font-weight: var(--fw-semibold);
   font-size: var(--fs-sm);
   cursor: pointer;
-  box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.18);
 }
 
 /* ════════════════════════════════════════
