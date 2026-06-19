@@ -29,7 +29,7 @@ const RETURNS_LINK = { to: '/pharmacy/returns', label: 'Return Requests', icon: 
 // Role-gated visibility for the Returns Queue. The backend @PreAuthorize
 // matches this list (PHARMACIST, PHARMACY_ADMIN, SUPER_ADMIN — uppercase) so
 // even if the sidebar entry slips through, the call surface is the same.
-const RETURNS_ROLES = new Set(['pharmacist', 'pharmacy_admin', 'super_admin']);
+const RETURNS_ROLES = new Set(['pharmacist', 'pharmacy_admin', 'hospital_admin', 'super_admin']);
 const SALES_REPORT_LINKS = [
     { to: '/pharmacy/reports/sales-summary', label: 'Sales Summary',     icon: FileText },
     { to: '/pharmacy/reports/sales-by-drug', label: 'Sales by Drug',     icon: Pill },
