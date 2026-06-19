@@ -42,14 +42,23 @@ export default function ReturnsQueue() {
   const [filter, setFilter] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [syncing, setSyncing] = useState(false);
   const [selected, setSelected] = useState(null);
   const toast = useToast();
 
-  const load = useCallback(async () => {
+  // Sync silently — runs before every list. The page is the always-on path
+  // so the operator never has to click anything to see fresh nurse-initiated
+  // returns. Errors are logged, not toasted — a transient HMS hiccup
+  // shouldn't bother the pharmacist while they're working through other rows.
+  const syncSilent = useCallback(async () => {
+    try { await syncReturns(); }
+    catch (e) { console.warn('Background sync failed:', e?.response?.data?.message || e.message); }
+  }, []);
+
+  const load = useCallback(async ({ withSync = true } = {}) => {
     setLoading(true);
     setError(null);
     try {
+      if (withSync) await syncSilent();
       const data = await listReturns('REQUESTED');
       setRows(data);
     } catch (e) {
@@ -58,9 +67,11 @@ export default function ReturnsQueue() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [syncSilent]);
 
-  // First load + 30s polling. Stops when the tab is hidden.
+  // First load + 30s polling. Stops when the tab is hidden. Each tick
+  // auto-syncs with HMS so a nurse-initiated return appears within ~30s
+  // without the pharmacist clicking anything.
   useEffect(() => {
     load();
     const id = setInterval(() => {
@@ -68,19 +79,6 @@ export default function ReturnsQueue() {
     }, 30_000);
     return () => clearInterval(id);
   }, [load]);
-
-  const handleSync = async () => {
-    setSyncing(true);
-    try {
-      const res = await syncReturns();
-      toast(`Sync complete — ${res?.inserted ?? 0} new return(s)`, 'success');
-      await load();
-    } catch (e) {
-      toast('Sync failed: ' + (e.response?.data?.message || e.message), 'error');
-    } finally {
-      setSyncing(false);
-    }
-  };
 
   const filtered = useMemo(() => {
     const q = filter.trim().toLowerCase();
@@ -138,10 +136,7 @@ export default function ReturnsQueue() {
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />
-            <Button variant="secondary" onClick={handleSync} disabled={syncing || loading}>
-              {syncing ? 'Syncing…' : 'Sync from HMS'}
-            </Button>
-            <Button variant="secondary" onClick={load} disabled={loading}>
+            <Button variant="secondary" onClick={() => load()} disabled={loading}>
               {loading ? 'Loading…' : 'Refresh'}
             </Button>
           </>
@@ -155,7 +150,7 @@ export default function ReturnsQueue() {
           columns={columns}
           data={filtered}
           loading={loading}
-          emptyMessage="No pending return requests. Click 'Sync from HMS' to pull the latest."
+          emptyMessage="No pending return requests."
           getRowKey={(r) => r.id}
         />
       </Card>
