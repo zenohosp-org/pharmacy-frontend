@@ -1,14 +1,16 @@
-import { useState, Suspense } from 'react';
+import { useState, Suspense, useMemo } from 'react';
 import { Link, useLocation, Outlet } from 'react-router-dom';
 import ContentLoader from './shared/ContentLoader';
 import Header from './Header';
+import { useAuth } from '../context/AuthContext';
 import {
     LayoutDashboard, ShoppingCart, History,
     ChevronDown, ChevronRight, Pill, FileText,
     Menu as MenuIcon, X as XIcon,
     Activity, BarChart2, Boxes, BookOpen, LayoutGrid, ArrowUpRight,
     ClipboardList, Receipt, CreditCard, TrendingUp,
-    PieChart, AlertTriangle, ArrowLeftRight, PackageX, Coins, Settings
+    PieChart, AlertTriangle, ArrowLeftRight, PackageX, Coins, Settings,
+    RotateCcw
 } from 'lucide-react';
 
 const EXTERNAL_APPS = [
@@ -19,10 +21,15 @@ const EXTERNAL_APPS = [
     { label: 'Assets',    href: 'https://asset.zenohosp.com',     icon: LayoutGrid },
 ];
 
-const WARD_LINKS = [
+const WARD_LINKS_BASE = [
     { to: '/pharmacy/dispensing/queue', label: 'Pending Prescriptions', icon: ClipboardList },
     { to: '/pharmacy/dispensing/logs',  label: 'Dispensing History',    icon: History },
 ];
+const RETURNS_LINK = { to: '/pharmacy/returns', label: 'Return Requests', icon: RotateCcw };
+// Role-gated visibility for the Returns Queue. The backend @PreAuthorize
+// matches this list (PHARMACIST, PHARMACY_ADMIN, SUPER_ADMIN — uppercase) so
+// even if the sidebar entry slips through, the call surface is the same.
+const RETURNS_ROLES = new Set(['pharmacist', 'pharmacy_admin', 'super_admin']);
 const SALES_REPORT_LINKS = [
     { to: '/pharmacy/reports/sales-summary', label: 'Sales Summary',     icon: FileText },
     { to: '/pharmacy/reports/sales-by-drug', label: 'Sales by Drug',     icon: Pill },
@@ -43,10 +50,17 @@ const SETTINGS_LINKS = [
 
 export default function Layout() {
     const location = useLocation();
+    const { user } = useAuth();
+    const wardLinks = useMemo(() => {
+        // Insert Return Requests between Pending Prescriptions and Dispensing History
+        // when the operator has a role that can act on a return.
+        if (!RETURNS_ROLES.has(user?.role)) return WARD_LINKS_BASE;
+        return [WARD_LINKS_BASE[0], RETURNS_LINK, WARD_LINKS_BASE[1]];
+    }, [user?.role]);
     const [sidebarOpen, setSidebarOpen] = useState(false);   // mobile drawer
     const [collapsed, setCollapsed] = useState(false);       // desktop icon rail
     const [dispensingOpen, setDispensingOpen] = useState(
-        location.pathname.startsWith('/pharmacy/dispensing')
+        location.pathname.startsWith('/pharmacy/dispensing') || location.pathname.startsWith('/pharmacy/returns')
     );
     const [salesReportsOpen, setSalesReportsOpen] = useState(
         SALES_REPORT_LINKS.some(l => location.pathname.startsWith(l.to))
@@ -158,7 +172,7 @@ export default function Layout() {
                                 setOpen={setDispensingOpen}
                                 icon={ClipboardList}
                                 label="Ward Dispensing"
-                                links={WARD_LINKS}
+                                links={wardLinks}
                             />
                             <TopLink to="/pharmacy/sales-ledger" icon={Receipt} label="Sales Ledger" />
                         </li>

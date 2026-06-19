@@ -1,0 +1,49 @@
+.rq-notes {
+    margin-top: 4px;
+    max-width: 22ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.rq-modal-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 24px;
+    margin-bottom: 16px;
+}
+
+.rq-modal-label {
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--color-gray-500);
+    margin-bottom: 4px;
+}
+
+.rq-modal-value {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.rq-modal-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 14px 24px;
+    padding-top: 14px;
+    border-top: 1px solid var(--color-gray-200);
+}
+
+.rq-modal-form--single {
+    grid-template-columns: 1fr;
+}
+
+.rq-warn {
+    font-size: 11px;
+    color: var(--color-warning, #b45309);
+    margin-top: 4px;
+}
+
+.rq-modal-err {
+    margin-top: 14px;
+}

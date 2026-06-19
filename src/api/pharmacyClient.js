@@ -253,6 +253,28 @@ export const getPendingPrescriptions = async () => {
   return response.data || [];
 };
 
+// ── IPD ward returns (consumer of HMS prescription-return queue) ──
+export const listReturns = async (status) => {
+  const params = status ? `?status=${encodeURIComponent(status)}` : '';
+  const response = await api.get(`/api/pharmacy/returns${params}`);
+  return response.data || [];
+};
+
+export const syncReturns = async () => {
+  const response = await api.post('/api/pharmacy/returns/sync');
+  return response.data;
+};
+
+export const verifyReturn = async (id, body) => {
+  const response = await api.post(`/api/pharmacy/returns/${id}/verify`, body);
+  return response.data;
+};
+
+export const rejectReturn = async (id, body) => {
+  const response = await api.post(`/api/pharmacy/returns/${id}/reject`, body);
+  return response.data;
+};
+
 const FALLBACK_STORE_ID = '550e8400-e29b-41d4-a716-446655440001';
 
 export const getDefaultStoreId = async () => {
