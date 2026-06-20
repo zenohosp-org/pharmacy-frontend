@@ -172,6 +172,12 @@ export default function ReturnsQueue() {
 
 function ReturnReviewModal({ row, onClose, onDone }) {
   const [qty, setQty] = useState(row.returnQty ?? 1);
+  // Reason-driven QUARANTINE is a clinical-safety lock, not a default — a
+  // pharmacist must NOT be able to put an "ineffective" or "adverse reaction"
+  // drug back into sellable stock. The previous version pre-selected the
+  // right option but left STOCK pickable in the dropdown, so a slip would
+  // re-credit the wrong inventory.
+  const quarantineLocked = REASON_PUT_TO[row.reasonCode] === 'QUARANTINE';
   const [putTo, setPutTo] = useState(defaultPutTo(row.reasonCode));
   const [rejectMode, setRejectMode] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
@@ -306,11 +312,24 @@ function ReturnReviewModal({ row, onClose, onDone }) {
               value={putTo}
               onChange={(e) => setPutTo(e.target.value)}
               className="form-input"
-              disabled={busy}
+              disabled={busy || quarantineLocked}
             >
-              <option value="STOCK">STOCK — back to sellable inventory</option>
+              {/* STOCK is intentionally absent when the reason mandates
+                  quarantine — putting an ineffective / adverse-reaction /
+                  near-expiry / wastage drug back into sellable inventory is
+                  a clinical-safety violation, not a configurable choice. */}
+              {!quarantineLocked && (
+                <option value="STOCK">STOCK — back to sellable inventory</option>
+              )}
               <option value="QUARANTINE">QUARANTINE — audit only, no stock back</option>
             </select>
+            {quarantineLocked && (
+              <div className="rq-info">
+                Locked to QUARANTINE — the reason "{row.reasonCode}" means the
+                drug must not re-enter sellable stock. To override, reject this
+                return and ask the nurse to re-initiate with a different reason.
+              </div>
+            )}
           </div>
         </div>
       )}

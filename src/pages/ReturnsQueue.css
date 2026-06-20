@@ -44,6 +44,22 @@
     margin-top: 4px;
 }
 
+/* Clinical-safety lock notice — accompanies the disabled put-to dropdown
+   when the return reason forces QUARANTINE. Softer treatment than .rq-warn
+   because it's informational, not a problem the pharmacist caused. */
+.rq-info {
+    font-size: 11px;
+    color: var(--color-text-muted, #4b5563);
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-left-color: #b45309;
+    border-left-width: 3px;
+    border-radius: 6px;
+    padding: 6px 10px;
+    margin-top: 6px;
+    line-height: 1.4;
+}
+
 .rq-modal-err {
     margin-top: 14px;
 }
