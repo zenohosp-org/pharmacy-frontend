@@ -203,6 +203,12 @@ export const getDrugAlternatives = async (drugId) => {
   return response.data;
 };
 
+// Same-generic substitutes (same composition of comma-separated salts), with stock.
+export const getGenericAlternatives = async (drugId) => {
+  const response = await api.get(`/api/pharmacy/drugs/${drugId}/generic-alternatives`);
+  return response.data;
+};
+
 export const addDrugAlternative = async (drugId, alternativeDrugId, reason) => {
   const response = await api.post(`/api/pharmacy/drugs/${drugId}/alternatives`, {
     alternativeDrugId,

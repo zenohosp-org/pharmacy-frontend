@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import './DrugInfoPanel.css';
 
-// Collapsible drug-info + therapeutic-alternatives panels shown under the
-// counter-sale search bar once a drug is selected.
-export default function DrugInfoPanel({ drug, alternatives, drugs, onPickAlternative }) {
+// Collapsible drug-info + same-generic alternatives panels shown under the
+// drug search bar once a drug is selected. `alternatives` are GenericAlternativeResponse
+// rows (id, brandName, genericName, schedule, totalQty, inStock) — same composition.
+export default function DrugInfoPanel({ drug, alternatives = [], onPickAlternative, defaultAltOpen = false }) {
   const [showDrugInfo, setShowDrugInfo] = useState(false);
-  const [showAlt, setShowAlt] = useState(false);
+  const [showAlt, setShowAlt] = useState(defaultAltOpen);
 
   if (!drug) return null;
   const hasInfo = drug.purpose || drug.saltName;
@@ -34,23 +36,22 @@ export default function DrugInfoPanel({ drug, alternatives, drugs, onPickAlterna
       {alternatives.length > 0 && (
         <div className="cs-info-panel cs-info-panel--warn" onClick={() => setShowAlt(v => !v)}>
           <div className="cs-info-head">
-            <strong>💊 {alternatives.length} alternative{alternatives.length > 1 ? 's' : ''}</strong>
+            <strong>💊 {alternatives.length} same-generic alternative{alternatives.length > 1 ? 's' : ''}</strong>
             <span>{showAlt ? '▲' : '▼'}</span>
           </div>
           {showAlt && (
             <div className="cs-info-body">
-              {alternatives.map((alt, i) => {
-                const altDrug = drugs.find(d => d.id === alt.alternativeDrugId);
-                return altDrug ? (
-                  <div key={i} onMouseDown={() => onPickAlternative(altDrug)} className="cs-alt-item">
-                    <div>
-                      <div className="cs-alt-name">{altDrug.brandName}</div>
-                      <div className="cs-alt-generic">{altDrug.genericName} {alt.reason && `· ${alt.reason}`}</div>
-                    </div>
-                    <span>→</span>
+              {alternatives.map((alt) => (
+                <div key={alt.id} onMouseDown={() => onPickAlternative(alt)} className="cs-alt-item">
+                  <div>
+                    <div className="cs-alt-name">{alt.brandName}</div>
+                    <div className="cs-alt-generic">{alt.genericName}</div>
                   </div>
-                ) : null;
-              })}
+                  <span className={`cs-alt-stock cs-alt-stock--${alt.inStock ? 'ok' : 'out'}`}>
+                    {alt.inStock ? `In stock · ${alt.totalQty}` : 'Out of stock'}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>

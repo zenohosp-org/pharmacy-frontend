@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { createCounterSaleBulk, getDrugAlternatives } from '../api/pharmacyClient';
+import { createCounterSaleBulk, getGenericAlternatives } from '../api/pharmacyClient';
 import useDrugCatalog from '../hooks/useDrugCatalog';
 import useBatchPicker from '../hooks/useBatchPicker';
 import useCart from '../hooks/useCart';
@@ -23,6 +23,7 @@ export default function CounterSale() {
   const toast = useToast();
 
   const [drugSearch, setDrugSearch] = useState('');
+  const [selectedDrug, setSelectedDrug] = useState(null);
   const [alternatives, setAlternatives] = useState([]);
   const [patientPhone, setPatientPhone] = useState('');
   const [doctorName, setDoctorName] = useState('');
@@ -34,21 +35,24 @@ export default function CounterSale() {
 
   const handleDrugSelect = async (drug) => {
     setDrugSearch(`${drug.brandName} (${drug.genericName})`);
+    setSelectedDrug(drug);
     setAlternatives([]);
 
     try {
-      const [{ sorted, raw }, altData] = await Promise.all([
+      const [{ sorted }, altData] = await Promise.all([
         loadBatches(drug.id),
-        getDrugAlternatives(drug.id).catch(() => []),
+        getGenericAlternatives(drug.id).catch(() => []),
       ]);
 
       setAlternatives(altData);
 
       if (sorted.length === 0) {
         setError(null);
-        setNotice(`${drug.brandName} is currently out of stock — no batches available.`);
+        const altNote = altData.some(a => a.inStock)
+          ? ' See same-generic alternatives below.'
+          : '';
+        setNotice(`${drug.brandName} is currently out of stock — no batches available.${altNote}`);
         clearPending();
-        setDrugSearch('');
         return;
       }
 
@@ -79,11 +83,15 @@ export default function CounterSale() {
     addToCart(item);
     clearPending();
     setDrugSearch('');
+    setSelectedDrug(null);
+    setAlternatives([]);
   };
 
   const clearPendingRow = () => {
     clearPending();
     setDrugSearch('');
+    setSelectedDrug(null);
+    setAlternatives([]);
   };
 
   // Auto-add the pending row to the cart once a valid quantity is entered.
@@ -182,11 +190,11 @@ export default function CounterSale() {
           />
 
           <DrugInfoPanel
-            key={pending?.drugId}
-            drug={pending?.drug}
+            key={selectedDrug?.id}
+            drug={selectedDrug}
             alternatives={alternatives}
-            drugs={drugs}
-            onPickAlternative={handleDrugSelect}
+            defaultAltOpen={!pending}
+            onPickAlternative={(alt) => handleDrugSelect(drugs.find(d => d.id === alt.id) || alt)}
           />
 
           <LineItemsTable

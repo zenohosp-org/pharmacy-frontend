@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { createWardIssue, getDefaultStoreId } from '../api/pharmacyClient';
+import { createWardIssue, getDefaultStoreId, getGenericAlternatives } from '../api/pharmacyClient';
 import useDrugCatalog from '../hooks/useDrugCatalog';
 import useBatchPicker from '../hooks/useBatchPicker';
 import useCart from '../hooks/useCart';
@@ -10,6 +10,7 @@ import PrescriptionQueue from '../components/PrescriptionQueue';
 import PageHeader from '../components/shared/PageHeader';
 import Alert from '../components/shared/Alert';
 import DrugSearchCard from '../components/dispensing/DrugSearchCard';
+import DrugInfoPanel from '../components/dispensing/DrugInfoPanel';
 import PendingDrugRow from '../components/dispensing/PendingDrugRow';
 import CartList from '../components/dispensing/CartList';
 import PatientPanel from '../components/dispensing/PatientPanel';
@@ -19,6 +20,8 @@ import './Dispensing.css';
 export default function Dispensing() {
   const [storeId, setStoreId] = useState('550e8400-e29b-41d4-a716-446655440001');
   const [drugSearch, setDrugSearch] = useState('');
+  const [selectedDrug, setSelectedDrug] = useState(null);
+  const [alternatives, setAlternatives] = useState([]);
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
@@ -39,8 +42,21 @@ export default function Dispensing() {
 
   const handleDrugSelect = async (drug) => {
     setDrugSearch('');
+    setSelectedDrug(drug);
+    setAlternatives([]);
     try {
-      const { sorted } = await loadBatches(drug.id);
+      const [{ sorted }, altData] = await Promise.all([
+        loadBatches(drug.id),
+        getGenericAlternatives(drug.id).catch(() => []),
+      ]);
+      setAlternatives(altData);
+      if (sorted.length === 0) {
+        const altNote = altData.some(a => a.inStock) ? ' See same-generic alternatives below.' : '';
+        setError(`${drug.brandName} is out of stock — no batches available.${altNote}`);
+        clearPending();
+        return;
+      }
+      setError(null);
       setPending({
         id: Math.random(),
         drugId: drug.id,
@@ -59,7 +75,14 @@ export default function Dispensing() {
   const handlePickPrescriptionItem = async (item, prescription) => {
     if (!item?.drugId) return; // free-text item — pharmacist resolves manually
     try {
+      setError(null);
+      setSelectedDrug(drugs.find(d => d.id === item.drugId) || { id: item.drugId, brandName: item.drugName });
+      setAlternatives([]);
+      getGenericAlternatives(item.drugId).then(setAlternatives).catch(() => setAlternatives([]));
       const { sorted } = await loadBatches(item.drugId);
+      if (sorted.length === 0) {
+        setError(`${item.drugName} is out of stock — no batches available. Check same-generic alternatives below.`);
+      }
       setPending({
         id: Math.random(),
         drugId: item.drugId,
@@ -72,7 +95,6 @@ export default function Dispensing() {
         prescriptionId: prescription?.id ?? null,
         prescriptionItemId: item.id ?? null,
       });
-      setError(null);
     } catch (e) {
       console.error(e);
       setError('Could not load stock for the selected drug');
@@ -108,6 +130,8 @@ export default function Dispensing() {
     setError(null);
     addToCart(pending);
     clearPending();
+    setSelectedDrug(null);
+    setAlternatives([]);
   };
 
   const handleSubmit = async () => {
@@ -215,6 +239,14 @@ export default function Dispensing() {
             onChange={setPending}
             onAdd={handleAddToCart}
             onClear={clearPending}
+          />
+
+          <DrugInfoPanel
+            key={selectedDrug?.id}
+            drug={selectedDrug}
+            alternatives={alternatives}
+            defaultAltOpen={!pending}
+            onPickAlternative={(alt) => handleDrugSelect(drugs.find(d => d.id === alt.id) || alt)}
           />
 
           <CartList cart={cart} onItemChange={updateItem} onRemove={removeItem} />

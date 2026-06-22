@@ -21,61 +21,8 @@
     overflow: visible;
 }
 
-/* ── Drug info / alternatives panels ── */
-.cs-info-row {
-    display: flex;
-    gap: 10px;
-    margin-bottom: 14px;
-}
-
-.cs-info-panel {
-    flex: 1;
-    padding: 10px 14px;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: var(--fs-sm);
-    background: var(--color-info-subtle);
-    border: 1px solid var(--color-info-light);
-    color: var(--color-info-dark);
-}
-
-.cs-info-panel--warn {
-    background: var(--color-warning-subtle);
-    border-color: var(--color-warning-light);
-    color: var(--color-warning-dark);
-}
-
-.cs-info-head {
-    display: flex;
-    justify-content: space-between;
-}
-
-.cs-info-body {
-    margin-top: 8px;
-    line-height: 1.6;
-}
-
-.cs-alt-item {
-    padding: 6px 8px;
-    border-radius: var(--radius-sm);
-    margin-bottom: 4px;
-    background: var(--color-white);
-    border: 1px solid var(--color-warning-light);
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-}
-
-.cs-alt-name {
-    font-weight: var(--fw-semibold);
-    font-size: var(--fs-sm);
-}
-
-.cs-alt-generic {
-    font-size: var(--fs-xs);
-    color: var(--color-warning-dark);
-}
+/* Drug info / same-generic alternatives panel styles now live in
+   components/dispensing/DrugInfoPanel.css (shared by POS + ward dispensing). */
 
 /* ── Line items ── */
 .cs-li-head,
