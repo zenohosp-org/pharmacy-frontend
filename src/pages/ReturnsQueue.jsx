@@ -201,10 +201,19 @@ function ReturnReviewModal({ row, onClose, onDone }) {
         }],
       };
       const result = await verifyReturn(row.id, body);
-      const billPart = result?.creditNoteBillId
-        ? ` — credit note created (${result.creditNoteBillId.slice(0, 8)})`
-        : '';
-      onDone(`Return verified${billPart}`);
+      // Server now returns { ret, resolvedLines: [{ batchId, batchNumber, qty, putTo }] }.
+      // Show the resolved batch in the toast so the pharmacist can confirm at a
+      // glance which strip's batch got credited.
+      const ret = result?.ret;
+      const first = result?.resolvedLines?.[0];
+      const parts = [];
+      if (first?.batchNumber) {
+        parts.push(`${first.qty} unit${Number(first.qty) === 1 ? '' : 's'} → batch ${first.batchNumber}`);
+      }
+      if (ret?.creditNoteBillId) {
+        parts.push(`credit note ${ret.creditNoteBillId.slice(0, 8)}`);
+      }
+      onDone(parts.length ? `Return verified — ${parts.join(' · ')}` : 'Return verified');
     } catch (e) {
       const msg = e.response?.data?.message || e.message;
       setErr(`Verify failed: ${msg}`);
