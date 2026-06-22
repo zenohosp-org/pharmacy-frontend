@@ -284,6 +284,19 @@ function ReturnReviewModal({ row, onClose, onDone }) {
           <div className="rq-modal-label">Initiated by</div>
           <div className="rq-modal-value">{row.initiatedByName || '—'}</div>
         </div>
+        <div className="rq-modal-batch">
+          <div className="rq-modal-label">Batch from strip</div>
+          {row.batchNumber ? (
+            <div className="rq-modal-value">
+              <span className="rq-batch-code">{row.batchNumber}</span>
+              <span className="cell-muted rq-batch-hint">verify at counter →</span>
+            </div>
+          ) : (
+            <div className="cell-muted rq-batch-empty">
+              No batch specified — will credit earliest dispense
+            </div>
+          )}
+        </div>
       </div>
 
       {!rejectMode && (

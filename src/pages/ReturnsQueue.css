@@ -63,3 +63,29 @@
 .rq-modal-err {
     margin-top: 14px;
 }
+
+/* Nurse-scanned batch code from the physical strip. Mono font + light
+   border so it visually reads as a code to verify against the actual
+   strip at the counter. */
+.rq-modal-batch {
+    grid-column: 1 / -1;
+}
+
+.rq-batch-code {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    font-weight: 700;
+    background: #f8fafc;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 2px 8px;
+    margin-right: 10px;
+}
+
+.rq-batch-hint {
+    font-size: 11px;
+}
+
+.rq-batch-empty {
+    font-size: 12px;
+    font-style: italic;
+}
